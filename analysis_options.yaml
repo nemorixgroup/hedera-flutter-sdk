@@ -1,4 +1,14 @@
-include: package:flutter_lints/flutter.yaml
+include: package:very_good_analysis/analysis_options.yaml
 
-# Additional information about this file can be found at
-# https://dart.dev/guides/language/analysis-options
+analyzer:
+  exclude:
+    # Ignore auto-generated Protobuf code
+    - lib/src/proto/**.pb.dart
+    - lib/src/proto/**.pbenum.dart
+    - lib/src/proto/**.pbgrpc.dart
+    - lib/src/proto/**.pbjson.dart
+
+linter:
+  rules:
+    # Allow print only in tests and debug contexts
+    avoid_print: false
