@@ -12,3 +12,7 @@ linter:
   rules:
     # Allow print only in tests and debug contexts
     avoid_print: false
+    # Allow fluent/builder pattern (return this) for SDK API
+    avoid_returning_this: false
+    # Allow constructors without const
+    prefer_const_constructors: false

@@ -43,6 +43,9 @@ dependencies:
   # HTTP client - Mirror Node REST API
   http: ^1.2.1
 
+  # Immutable annotation for model classes
+  meta: ^1.15.0
+
   # Cryptography - ED25519 and ECDSA key generation and signing
   pointycastle: ^3.9.1
 
