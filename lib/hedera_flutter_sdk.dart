@@ -14,7 +14,7 @@
 ///       PrivateKey.fromString('your-private-key'),
 ///     );
 /// ```
-library hedera_flutter_sdk;
+library;
 
 // Client
 export 'src/client/hedera_client.dart';
