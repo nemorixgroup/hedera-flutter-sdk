@@ -59,8 +59,7 @@ class Hbar {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Hbar && _tinybars == other._tinybars;
+      identical(this, other) || other is Hbar && _tinybars == other._tinybars;
 
   @override
   int get hashCode => _tinybars.hashCode;
