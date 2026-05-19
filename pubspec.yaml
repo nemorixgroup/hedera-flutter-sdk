@@ -1,10 +1,8 @@
 name: hedera_flutter_sdk
 description: >
   The first native Flutter/Dart SDK for the Hedera network.
-  Supports account management, HBAR transfers, Hedera Token
-  Service (HTS), Hedera Consensus Service (HCS), Mirror Node
-  REST client, and real-time WebSocket subscriptions.
-  Pure Dart and no platform channels required.
+  Pure Dart, no platform channels. Supports HBAR, HTS, HCS,
+  and Mirror Node. Built for mobile and desktop.
 version: 0.0.1-dev
 repository: https://github.com/nemorixgroup/hedera-flutter-sdk
 homepage: https://nemorixpay.com
