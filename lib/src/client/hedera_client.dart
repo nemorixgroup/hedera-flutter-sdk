@@ -1,4 +1,5 @@
 import 'package:hedera_flutter_sdk/src/client/hedera_network.dart';
+import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
 import 'package:hedera_flutter_sdk/src/crypto/private_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
@@ -46,11 +47,15 @@ class HederaClient {
 
   /// Maximum fee the client will pay for a single transaction.
   /// Defaults to 2 HBAR.
-  Hbar _maxTransactionFee = Hbar(2);
+  Hbar _maxTransactionFee = Hbar.fromTinybars(
+    HederaConstants.defaultMaxTransactionFeeTinybars,
+  );
 
   /// Maximum payment for a single query.
   /// Defaults to 1 HBAR.
-  Hbar _maxQueryPayment = Hbar(1);
+  Hbar _maxQueryPayment = Hbar.fromTinybars(
+    HederaConstants.defaultMaxQueryPaymentTinybars,
+  );
 
   /// Sets the operator account and key for this client.
   ///
@@ -102,11 +107,14 @@ class HederaClient {
   String get networkEndpoint {
     switch (network) {
       case HederaNetwork.mainnet:
-        return '0.mainnet.hedera.com:50211';
+        return '${HederaConstants.mainnetNodeEndpoint}'
+            ':${HederaConstants.grpcPort}';
       case HederaNetwork.testnet:
-        return '0.testnet.hedera.com:50211';
+        return '${HederaConstants.testnetNodeEndpoint}'
+            ':${HederaConstants.grpcPort}';
       case HederaNetwork.previewnet:
-        return '0.previewnet.hedera.com:50211';
+        return '${HederaConstants.previewnetNodeEndpoint}'
+            ':${HederaConstants.grpcPort}';
     }
   }
 }

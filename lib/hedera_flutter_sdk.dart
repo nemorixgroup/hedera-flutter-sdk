@@ -20,6 +20,11 @@ library;
 export 'src/client/hedera_client.dart';
 export 'src/client/hedera_network.dart';
 
+// Core
+export 'src/core/hedera_constants.dart';
+export 'src/core/hedera_status_code.dart';
+export 'src/core/hedera_status_exception.dart';
+
 // Crypto
 export 'src/crypto/mnemonic.dart';
 export 'src/crypto/private_key.dart';
