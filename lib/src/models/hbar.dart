@@ -1,3 +1,4 @@
+import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
 import 'package:meta/meta.dart';
 
 /// Represents an amount of HBAR; the native cryptocurrency of Hedera.
@@ -30,7 +31,7 @@ class Hbar {
   const Hbar.fromTinybars(int tinybars) : _tinybars = tinybars;
 
   /// The number of tinybars in one HBAR.
-  static const int _tinybarsPerHbar = 100000000;
+  static const int _tinybarsPerHbar = HederaConstants.tinybarsPerHbar;
 
   /// Zero HBAR.
   static const Hbar zero = Hbar.fromTinybars(0);
