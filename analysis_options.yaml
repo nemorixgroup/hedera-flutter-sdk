@@ -7,6 +7,7 @@ analyzer:
     - lib/src/proto/**.pbenum.dart
     - lib/src/proto/**.pbgrpc.dart
     - lib/src/proto/**.pbjson.dart
+    - lib/src/proto/**
 
 linter:
   rules:
