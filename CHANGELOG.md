@@ -5,6 +5,26 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.0.3-dev
+
+Fix pana static analysis score from 50/160 to 130/160.
+
+### Fixed
+- generate_proto.ps1: include auxiliary/ and state/ subdirectories
+  to resolve missing URI imports in transaction.pb.dart
+- pubspec.yaml: add explicit platform declarations (Android, iOS,
+  macOS, Windows, Linux) excluding Web due to gRPC dart:io dependency
+- analysis_options.yaml: exclude lib/src/proto/** from analyzer
+  to suppress warnings in auto-generated Protobuf files
+
+### Changed
+- pubspec.yaml: version bumped to 0.0.3-dev
+
+### Status
+Phase 1 completed. Not ready for production use.
+pana score: 130/160.
+Phase 2 starting: Cryptography and Account Management.
+
 ## 0.0.2-dev
 
 Phase 1 completed - SDK foundation and architecture.
