@@ -30,7 +30,7 @@ import 'package:hedera_flutter_sdk/src/crypto/wordlists/spanish.dart';
 class Mnemonic {
   Mnemonic._(this.words, this.language);
 
-  // ── Generators ────────────────────────────────────────────────────────────
+  // ---- Generators ----
 
   /// Generates a new 24-word BIP-39 mnemonic.
   ///
@@ -99,6 +99,26 @@ class Mnemonic {
     }
 
     return Mnemonic._(List.unmodifiable(words), language);
+  }
+
+  /// Creates a [Mnemonic] from a space-separated string of words.
+  ///
+  /// Validates that the word count is 12 or 24 and that
+  /// all words belong to a known BIP-39 wordlist.
+  ///
+  /// Throws [ArgumentError] if the word count is invalid.
+  /// Throws [ArgumentError] if any word is not in the wordlist.
+  ///
+  /// Example:
+  /// ```dart
+  /// final mnemonic = await Mnemonic.fromString(
+  ///   'abandon ability able about above absent absorb '
+  ///   'abstract absurd abuse access accident',
+  /// );
+  /// ```
+  static Future<Mnemonic> fromString(String phrase) async {
+    final words = phrase.trim().split(RegExp(r'\s+'));
+    return fromWords(words);
   }
 
   // ---- Public API ----
