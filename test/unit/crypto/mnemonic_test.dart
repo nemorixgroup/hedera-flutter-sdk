@@ -290,6 +290,17 @@ void main() {
         );
         expect(mnemonic.validate(), isTrue);
       });
+
+      test('returns false for Spanish mnemonic with tampered words', () async {
+        final mnemonic = await Mnemonic.generate12(
+          language: MnemonicLanguage.spanish,
+        );
+        // Replace last word with first word to break checksum
+        final tamperedWords = List<String>.from(mnemonic.words);
+        tamperedWords[tamperedWords.length - 1] = tamperedWords[0];
+        final tampered = await Mnemonic.fromWords(tamperedWords);
+        expect(tampered.validate(), isFalse);
+      });
     });
 
     // ---- toSeed ----
