@@ -168,15 +168,57 @@ class Mnemonic {
 
   /// Validates this mnemonic against its wordlist and checksum.
   ///
+  /// For English: validates using full BIP-39 checksum via bip39 package.
+  /// For Spanish: validates wordlist membership and BIP-39 checksum.
+  ///
   /// Returns true if the mnemonic is valid.
   bool validate() {
     if (language == MnemonicLanguage.english) {
       return bip39.validateMnemonic(phrase);
     }
-    // For Spanish: validate words are in wordlist
-    // Full checksum validation requires custom implementation
-    final wordlist = _getWordlist(language);
-    return words.every(wordlist.contains);
+    return _validateSpanish();
+  }
+
+  /// Validates a Spanish mnemonic using BIP-39 checksum algorithm.
+  bool _validateSpanish() {
+    // Step 1: verify all words are in the Spanish wordlist
+    for (final word in words) {
+      if (!spanishWordlist.contains(word)) {
+        return false;
+      }
+    }
+
+    // Step 2: convert word indices to 11-bit binary string
+    final bits = words
+        .map(
+          (w) => spanishWordlist.indexOf(w).toRadixString(2).padLeft(11, '0'),
+        )
+        .join();
+
+    // Step 3: split entropy bits and checksum bits
+    // For 12 words: 128 entropy bits + 4 checksum bits
+    // For 24 words: 256 entropy bits + 8 checksum bits
+    final totalBits = words.length * 11;
+    final checksumLength = words.length ~/ 3;
+    final entropyLength = totalBits - checksumLength;
+
+    final entropyBits = bits.substring(0, entropyLength);
+    final checksumBits = bits.substring(entropyLength);
+
+    // Step 4: convert entropy bits to bytes
+    final entropyBytes = Uint8List(entropyLength ~/ 8);
+    for (var i = 0; i < entropyBytes.length; i++) {
+      entropyBytes[i] = int.parse(
+        entropyBits.substring(i * 8, (i + 1) * 8),
+        radix: 2,
+      );
+    }
+
+    // Step 5: compute expected checksum from entropy
+    final expectedChecksum = _computeChecksum(entropyBytes);
+
+    // Step 6: compare checksums
+    return checksumBits == expectedChecksum;
   }
 
   @override
