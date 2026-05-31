@@ -190,6 +190,64 @@ void main() {
       });
     });
 
+    // ---- fromString ----
+
+    group('fromString', () {
+      test('accepts valid 12-word English phrase', () async {
+        final original = await Mnemonic.generate12();
+        final recovered = await Mnemonic.fromString(original.phrase);
+        expect(recovered.words, equals(original.words));
+        expect(recovered.language, equals(MnemonicLanguage.english));
+      });
+
+      test('accepts valid 24-word English phrase', () async {
+        final original = await Mnemonic.generate24();
+        final recovered = await Mnemonic.fromString(original.phrase);
+        expect(recovered.words, equals(original.words));
+        expect(recovered.language, equals(MnemonicLanguage.english));
+      });
+
+      test('accepts valid 24-word Spanish phrase', () async {
+        final original = await Mnemonic.generate24(
+          language: MnemonicLanguage.spanish,
+        );
+        final recovered = await Mnemonic.fromString(original.phrase);
+        expect(recovered.words, equals(original.words));
+        expect(recovered.language, equals(MnemonicLanguage.spanish));
+      });
+
+      test('handles extra spaces between words', () async {
+        final original = await Mnemonic.generate12();
+        final phraseWithExtraSpaces = original.words.join('  ');
+        final recovered = await Mnemonic.fromString(phraseWithExtraSpaces);
+        expect(recovered.words, equals(original.words));
+      });
+
+      test('handles leading and trailing spaces', () async {
+        final original = await Mnemonic.generate12();
+        final paddedPhrase = '  ${original.phrase}  ';
+        final recovered = await Mnemonic.fromString(paddedPhrase);
+        expect(recovered.words, equals(original.words));
+      });
+
+      test('throws ArgumentError for invalid word count', () async {
+        expect(
+          () => Mnemonic.fromString('abandon ability able'),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+
+      test('throws ArgumentError for invalid word', () async {
+        expect(
+          () => Mnemonic.fromString(
+            'abandon ability able about above absent '
+            'absorb abstract absurd abuse access invalidword',
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+      });
+    });
+
     // ---- phrase ----
 
     group('phrase', () {
