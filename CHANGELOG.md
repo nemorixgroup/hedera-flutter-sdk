@@ -5,6 +5,26 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.0.4-dev
+
+Phase 2 started: Cryptography and Account Management.
+
+### Added
+- `Mnemonic`: BIP-39 mnemonic generation and validation
+  with `generate24()` and `generate12()` in English and Spanish
+- `Mnemonic.fromString()`: create Mnemonic from space-separated phrase
+- `MnemonicLanguage`: enum with `english` and `spanish` options
+- Official BIP-39 English wordlist (2048 words)
+- Official BIP-39 Spanish wordlist (2048 words); first Hedera
+  SDK with native Spanish mnemonic support for LATAM users
+- `toSeed()`: derives 64-byte seed via PBKDF2 with optional passphrase
+- `validate()`: full BIP-39 checksum validation for English and Spanish
+- 41 unit tests for Mnemonic (101/101 total passing)
+
+### Status
+Phase 2 in progress: Cryptography and Account Management.
+Next: ED25519 and ECDSA key generation with pointycastle.
+
 ## 0.0.3-dev
 
 Fix pana static analysis score from 50/160 to 130/160.

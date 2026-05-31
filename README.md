@@ -4,7 +4,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-teal.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Dart](https://img.shields.io/badge/Dart-3.x-teal.svg)](https://dart.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg)](https://flutter.dev)
-[![Status](https://img.shields.io/badge/Status-In%20Development-orange.svg)]()
+[![Status](https://img.shields.io/badge/Status-Phase%201%20Complete-green.svg)]()
 
 **The first native Flutter/Dart SDK for the [Hedera](https://hedera.com) network.**  
 Pure Dart · No platform channels · Apache 2.0
@@ -15,8 +15,8 @@ This SDK is currently in **active development** by [Nemorix Group](https://nemor
 
 | Phase | Description | Status |
 |:------|:------------|:------:|
-| 1 | Architecture + Protobuf | 🔄 In Progress |
-| 2 | Crypto + Accounts | ⏳ Pending |
+| 1 | Architecture + Protobuf | ✅ Completed |
+| 2 | Crypto + Accounts | 🔄 In Progress |
 | 3 | HTS Tokens + NFTs | ⏳ Pending |
 | 4 | Mirror Node + HCS | ⏳ Pending |
 | 5 | Docs + pub.dev v1.0 | ⏳ Pending |
@@ -28,6 +28,16 @@ Hedera has official SDKs for Java, JavaScript, Go, Swift, C++ and Rust
 but no native Flutter/Dart SDK exists on pub.dev.
 
 This project closes that gap.
+
+## Current Features (v0.0.3-dev)
+
+- `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
+- Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
+- `HederaStatusException` and `HederaStatusCode` for typed error handling
+- `HederaConstants` with protocol-level values (ports, fees, endpoints)
+- 335 Dart classes generated from Hedera HAPI Protobuf definitions
+- BIP-39 mnemonic stubs in English and Spanish (Phase 2)
+- ED25519 and ECDSA key stubs (Phase 2)
 
 ## Planned Features
 
@@ -41,9 +51,9 @@ This project closes that gap.
 ## Planned Installation
 
 ```yaml
-# pubspec.yaml; available on pub.dev when v1.0.0 is released
+# pubspec.yaml; v0.0.3-dev - Phase 1 completed, not ready for production
 dependencies:
-  hedera_flutter_sdk: ^1.0.0
+  hedera_flutter_sdk: ^0.0.3-dev
 ```
 
 ## Planned Quick Start
