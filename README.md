@@ -4,7 +4,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-teal.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Dart](https://img.shields.io/badge/Dart-3.x-teal.svg)](https://dart.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg)](https://flutter.dev)
-[![Status](https://img.shields.io/badge/Status-Phase%201%20Complete-green.svg)]()
+[![Status](https://img.shields.io/badge/Status-Phase%202%20In%20Progress-blue.svg)]()
 
 **The first native Flutter/Dart SDK for the [Hedera](https://hedera.com) network.**  
 Pure Dart · No platform channels · Apache 2.0
@@ -29,44 +29,100 @@ but no native Flutter/Dart SDK exists on pub.dev.
 
 This project closes that gap.
 
-## Current Features (v0.0.3-dev)
-
-- `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
-- Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
-- `HederaStatusException` and `HederaStatusCode` for typed error handling
-- `HederaConstants` with protocol-level values (ports, fees, endpoints)
-- 335 Dart classes generated from Hedera HAPI Protobuf definitions
-- BIP-39 mnemonic stubs in English and Spanish (Phase 2)
-- ED25519 and ECDSA key stubs (Phase 2)
-
-## Planned Features
-
-- Account management and HBAR transfers
-- Hedera Token Service (HTS); fungible tokens, NFTs, native KYC
-- Mirror Node REST client with real-time WebSocket subscriptions
-- Hedera Consensus Service (HCS)
-- BIP-39 mnemonics in English and Spanish; built for LATAM
-- Pure Dart; iOS, Android, macOS, Windows, Linux
-
-## Planned Installation
+## Installation
 
 ```yaml
-# pubspec.yaml; v0.0.3-dev - Phase 1 completed, not ready for production
+# pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.0.3-dev
+  hedera_flutter_sdk: ^0.0.5-dev
 ```
 
-## Planned Quick Start
+## Quick Guide
+
+### Wallet and Keys (Phase 2)
+
+#### Generate a mnemonic
 
 ```dart
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 
+// English (default)
+final mnemonic = await Mnemonic.generate24();
+print(mnemonic.phrase);      // 24 words
+print(mnemonic.wordCount);   // 24
+print(mnemonic.validate());  // true
+
+// 12-word mnemonic
+final mnemonic12 = await Mnemonic.generate12();
+
+// Spanish - built for LATAM users
+final mnemonicEs = await Mnemonic.generate24(
+  language: MnemonicLanguage.spanish,
+);
+print(mnemonicEs.phrase);    // 24 palabras
+```
+
+#### Recover a wallet
+
+```dart
+// From word list
+final recovered = await Mnemonic.fromWords([
+  'word1', 'word2', 'word3', ...
+]);
+
+// From phrase string
+final recovered = await Mnemonic.fromString(
+  'word1 word2 word3 ...',
+);
+```
+
+#### Derive seed bytes
+
+```dart
+// Without passphrase
+final seed = mnemonic.toSeed();
+print(seed.length); // 64 bytes
+
+// With passphrase (optional extra security)
+final seed = mnemonic.toSeed(passphrase: 'my-passphrase');
+```
+
+### Connect to Hedera (Phase 1)
+
+```dart
 final client = HederaClient.forTestnet()
     .setOperator(
       AccountId.fromString('0.0.12345'),
       PrivateKey.fromString('your-private-key'),
     );
+
+print(client.networkEndpoint); // 0.testnet.hedera.com:50211
 ```
+
+## Current Features (v0.0.5-dev)
+
+- `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
+- `Mnemonic` with BIP-39 generation, validation, and recovery in English and 
+  Spanish (generate24, generate12, fromWords, fromString, toSeed, validate)
+- `MnemonicLanguage` enum with `english` and `spanish` options 
+- Official BIP-39 wordlists (2048 words each; English and Spanish)
+- Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
+- `HederaStatusException` and `HederaStatusCode` for typed error handling
+- `HederaConstants` with protocol-level values (ports, fees, endpoints)
+- 335 Dart classes generated from Hedera HAPI Protobuf definitions
+
+## Planned Features
+
+- ED25519 and ECDSA key generation and signing
+- HD key derivation from mnemonic (BIP-39 standard)
+- Legacy Hedera mnemonic support (HashPack and Blade Wallet compatible)
+- Account management: create, update, delete, transfer HBAR
+- Multi-signature: KeyList with M-of-N threshold
+- EVM address alias support
+- Hedera Token Service (HTS): fungible tokens, NFTs, native KYC
+- Mirror Node REST client with real-time WebSocket subscriptions
+- Hedera Consensus Service (HCS)
+- Transaction base class with Protobuf serialization
 
 ## Real-World Use Case
 
