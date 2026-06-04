@@ -133,9 +133,25 @@ class PrivateKey {
   // ---- Public API ----
 
   /// Returns the [PublicKey] corresponding to this private key.
-  // TODO(Phase2): Implement async public key derivation for ED25519
-  PublicKey get publicKey {
-    throw UnimplementedError('publicKey derivation; Phase 2');
+  ///
+  /// For ED25519 keys the public key is derived synchronously
+  /// from the private key seed using the Ed25519 algorithm.
+  ///
+  /// Example:
+  /// ```dart
+  /// final privateKey = await PrivateKey.generateED25519();
+  /// final publicKey = await privateKey.derivePublicKey();
+  /// print(publicKey.toHex());
+  /// ```
+  // TODO(Phase2): Implement ECDSA public key derivation
+  Future<PublicKey> derivePublicKey() async {
+    if (type == PrivateKeyType.ed25519) {
+      final algorithm = crypto.Ed25519();
+      final keyPair = await algorithm.newKeyPairFromSeed(_keyBytes);
+      final pubKey = await keyPair.extractPublicKey();
+      return PublicKey.fromBytes(pubKey.bytes);
+    }
+    throw UnimplementedError('ECDSA public key derivation; Phase 2');
   }
 
   /// Signs the given message bytes with this private key.
