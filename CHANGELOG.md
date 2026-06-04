@@ -5,6 +5,43 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.0.5-dev
+
+Phase 2 in progress: Cryptography and Account Management.
+
+### Added
+- `PrivateKey`: ED25519 and ECDSA key generation, import, and signing
+  - `generateED25519()` using cryptography package
+  - `generateECDSA()` using Random.secure()
+  - `fromBytes()` with type parameter
+  - `fromString()` supporting DER and raw hex
+  - `sign()` for ED25519 via cryptography package
+  - `toDerString()` and `toHex()` using ASN.1/DER prefix constants
+  - `toString()` does not expose key bytes (security)
+- `PublicKey`: derivation, import, and ED25519 signature verification
+  - `derivePublicKey()` async derivation from PrivateKey
+  - `fromBytes()` and `fromString()` supporting DER and raw hex
+  - `verify()` for ED25519 signature verification
+  - `toDerString()`, `toHex()`, `toString()` (safe to expose)
+- `HederaConstants`: ASN.1/DER prefix constants for ED25519 and ECDSA
+  - `ed25519PrivateKeyPrefix` (OID 1.3.101.112 - RFC 8410)
+  - `ecdsaPrivateKeyPrefix` (OID 1.3.132.0.10)
+  - `ed25519PublicKeyPrefix`
+- `cryptography ^2.9.0`: added for ED25519 key generation and signing
+- `example/`: Quick Start examples for Mnemonic, PrivateKey and PublicKey
+- README.md: Quick Guide expanded with PrivateKey and PublicKey examples
+- 54 new unit tests (155/155 total passing)
+
+### Changed
+- README.md: Current Features updated with PrivateKey and PublicKey
+- README.md: Planned Features updated; removed implemented items
+- README.md: encoding issues fixed
+
+### Status
+Phase 2 in progress: Cryptography and Account Management.
+Not ready for production use.
+Next: Mnemonic.toPrivateKey() HD key derivation and Account Management.
+
 ## 0.0.4-dev
 
 Phase 2 started: Cryptography and Account Management.
@@ -23,6 +60,7 @@ Phase 2 started: Cryptography and Account Management.
 
 ### Status
 Phase 2 in progress: Cryptography and Account Management.
+Not ready for production use.
 Next: ED25519 and ECDSA key generation with pointycastle.
 
 ## 0.0.3-dev

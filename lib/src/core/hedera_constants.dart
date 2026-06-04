@@ -83,4 +83,18 @@ class HederaConstants {
 
   /// gRPC endpoint for Hedera previewnet node 0.
   static const String previewnetNodeEndpoint = '0.previewnet.hedera.com';
+
+  /// DER prefix for ED25519 private keys (ASN.1 encoding).
+  /// OID 1.3.101.112 - RFC 8410
+  static const String ed25519PrivateKeyPrefix =
+      '302e020100300506032b657004220420';
+
+  /// DER prefix for ECDSA secp256k1 private keys (ASN.1 encoding).
+  /// OID 1.3.132.0.10
+  static const String ecdsaPrivateKeyPrefix =
+      '3030020100300706052b8104000a042204';
+
+  /// DER prefix for ED25519 public keys (ASN.1 encoding).
+  /// OID 1.3.101.112 - RFC 8410
+  static const String ed25519PublicKeyPrefix = '302a300506032b6570032100';
 }

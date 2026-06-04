@@ -33,6 +33,9 @@ dependencies:
   # Hex encoding and decoding utilities
   convert: ^3.1.1
 
+  # ED25519 and ECDSA key generation and signing
+  cryptography: ^2.9.0
+
   # Int64 support required by Protobuf
   fixnum: ^1.1.0
 
@@ -48,7 +51,7 @@ dependencies:
   # Immutable annotation for model classes
   meta: ^1.17.0
 
-  # Cryptography - ED25519 and ECDSA key generation and signing
+  # Cryptography - legacy ED25519 support via bip39
   pointycastle: ^3.9.1
 
   # Protobuf runtime - required for HAPI definitions
