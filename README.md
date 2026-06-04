@@ -6,7 +6,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg)](https://flutter.dev)
 [![Status](https://img.shields.io/badge/Status-Phase%202%20In%20Progress-blue.svg)]()
 
-**The first native Flutter/Dart SDK for the [Hedera](https://hedera.com) network.**  
+**The first native Flutter/Dart SDK for the [Hedera](https://hedera.com) network.**
 Pure Dart · No platform channels · Apache 2.0
 
 ## Status
@@ -87,6 +87,62 @@ print(seed.length); // 64 bytes
 final seed = mnemonic.toSeed(passphrase: 'my-passphrase');
 ```
 
+#### Generate a private key
+
+```dart
+// ED25519 - recommended for Hedera accounts
+final privateKey = await PrivateKey.generateED25519();
+print(privateKey.type.name);       // ed25519
+print(privateKey.toHex().length);  // 64
+print(privateKey.toDerString());   // 302e...
+print(privateKey.toString());      // [PrivateKey: ed25519]
+
+// ECDSA - for EVM wallet compatibility
+final ecdsaKey = await PrivateKey.generateECDSA();
+```
+
+#### Import a private key
+
+```dart
+// From DER hex string (HashPack / Blade Wallet format)
+final key = PrivateKey.fromString('302e020100300506032b657004220420...');
+
+// From raw hex string
+final key = PrivateKey.fromString('4a3b2c1d...');
+
+// From bytes
+final key = PrivateKey.fromBytes(keyBytes);
+```
+
+#### Sign a message
+
+```dart
+final message = [1, 2, 3, 4, 5];
+final signature = await privateKey.sign(message);
+print(signature.length); // 64 bytes
+```
+
+#### Derive and use a public key
+
+```dart
+// Derive public key from private key
+final publicKey = await privateKey.derivePublicKey();
+print(publicKey.toHex());        // 32 bytes as hex
+print(publicKey.toDerString());  // 302a...
+print(publicKey.toString());     // 302a... (safe to expose)
+
+// Import public key
+final pubKey = PublicKey.fromString('302a300506032b6570032100...');
+final pubKey = PublicKey.fromBytes(pubKeyBytes);
+
+// Verify a signature
+final isValid = await publicKey.verify(
+  message: message,
+  signature: signature,
+);
+print(isValid); // true
+```
+
 ### Connect to Hedera (Phase 1)
 
 ```dart
@@ -102,10 +158,12 @@ print(client.networkEndpoint); // 0.testnet.hedera.com:50211
 ## Current Features (v0.0.5-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
-- `Mnemonic` with BIP-39 generation, validation, and recovery in English and 
+- `Mnemonic` with BIP-39 generation, validation, and recovery in English and
   Spanish (generate24, generate12, fromWords, fromString, toSeed, validate)
-- `MnemonicLanguage` enum with `english` and `spanish` options 
+- `MnemonicLanguage` enum with `english` and `spanish` options
 - Official BIP-39 wordlists (2048 words each; English and Spanish)
+- `PrivateKey` with ED25519 and ECDSA generation, import, and signing
+- `PublicKey` with derivation, import, and ED25519 signature verification
 - Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
 - `HederaStatusException` and `HederaStatusCode` for typed error handling
 - `HederaConstants` with protocol-level values (ports, fees, endpoints)
@@ -113,7 +171,6 @@ print(client.networkEndpoint); // 0.testnet.hedera.com:50211
 
 ## Planned Features
 
-- ED25519 and ECDSA key generation and signing
 - HD key derivation from mnemonic (BIP-39 standard)
 - Legacy Hedera mnemonic support (HashPack and Blade Wallet compatible)
 - Account management: create, update, delete, transfer HBAR
@@ -146,10 +203,10 @@ under the Linux Foundation Decentralized Trust.
 
 ## Para desarrolladores en LATAM
 
-Este SDK está siendo desarrollado con soporte nativo para la región:
+Este SDK esta siendo desarrollado con soporte nativo para la region:
 
-- Mnemonics BIP-39 en **español**
-- Caso de uso principal: remesas **Estados Unidos hacia Latinoamérica**
+- Mnemonics BIP-39 en **espanol**
+- Caso de uso principal: remesas **Estados Unidos hacia Latinoamerica**
 - Desarrollado por [Nemorix Group](https://nemorixpay.com); Ohio, USA
 
 Siguenos para actualizaciones:
