@@ -137,6 +137,9 @@ class Mnemonic {
 
   /// Derives a [PrivateKey] from this mnemonic using BIP-39 derivation.
   ///
+  /// This is the standard derivation used by modern Hedera wallets
+  /// such as HashPack and Blade Wallet.
+  ///
   /// [passphrase] is optional and defaults to empty string.
   ///
   /// Example:
@@ -146,9 +149,10 @@ class Mnemonic {
   ///   passphrase: 'my-passphrase',
   /// );
   /// ```
-  // TODO(Phase2): Implement BIP-39 HD key derivation with pointycastle
   Future<PrivateKey> toPrivateKey({String passphrase = ''}) async {
-    throw UnimplementedError('Mnemonic.toPrivateKey; Phase 2');
+    final seed = toSeed(passphrase: passphrase);
+    final keyBytes = seed.sublist(0, 32);
+    return PrivateKey.fromBytes(keyBytes);
   }
 
   /// Derives a legacy Hedera private key from this mnemonic.
