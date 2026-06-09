@@ -5,6 +5,22 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Current Features (v0.0.6-dev)
+
+- `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
+- `Mnemonic` with BIP-39 generation, validation, and recovery in English and
+  Spanish (generate24, generate12, fromWords, fromString, toSeed, validate)
+- `MnemonicLanguage` enum with `english` and `spanish` options
+- Official BIP-39 wordlists (2048 words each; English and Spanish)
+- `Mnemonic.toPrivateKey()` and `toLegacyPrivateKey()` for HD key
+  derivation (12 and 24-word mnemonics; BIP-39 standard)
+- `PrivateKey` with ED25519 and ECDSA generation, import, and signing
+- `PublicKey` with derivation, import, and ED25519 signature verification
+- Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
+- `HederaStatusException` and `HederaStatusCode` for typed error handling
+- `HederaConstants` with protocol-level values (ports, fees, endpoints)
+- 335 Dart classes generated from Hedera HAPI Protobuf definitions
+
 ## 0.0.5-dev
 
 Phase 2 in progress: Cryptography and Account Management.
