@@ -34,10 +34,22 @@ This project closes that gap.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.0.5-dev
+  hedera_flutter_sdk: ^0.0.6-dev
 ```
 
 ## Quick Guide
+
+### Connect to Hedera (Phase 1)
+
+```dart
+final client = HederaClient.forTestnet()
+    .setOperator(
+      AccountId.fromString('0.0.12345'),
+      PrivateKey.fromString('your-private-key'),
+    );
+
+print(client.networkEndpoint); // 0.testnet.hedera.com:50211
+```
 
 ### Wallet and Keys (Phase 2)
 
@@ -143,19 +155,7 @@ final isValid = await publicKey.verify(
 print(isValid); // true
 ```
 
-### Connect to Hedera (Phase 1)
-
-```dart
-final client = HederaClient.forTestnet()
-    .setOperator(
-      AccountId.fromString('0.0.12345'),
-      PrivateKey.fromString('your-private-key'),
-    );
-
-print(client.networkEndpoint); // 0.testnet.hedera.com:50211
-```
-
-## Current Features (v0.0.5-dev)
+## Current Features (v0.0.6-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -168,11 +168,12 @@ print(client.networkEndpoint); // 0.testnet.hedera.com:50211
 - `HederaStatusException` and `HederaStatusCode` for typed error handling
 - `HederaConstants` with protocol-level values (ports, fees, endpoints)
 - 335 Dart classes generated from Hedera HAPI Protobuf definitions
+- `Mnemonic.toPrivateKey()` and `toLegacyPrivateKey()` 
+  for HD key derivation (12 and 24-word mnemonics)
 
 ## Planned Features
 
-- HD key derivation from mnemonic (BIP-39 standard)
-- Legacy Hedera mnemonic support (HashPack and Blade Wallet compatible)
+- `toLegacyPrivateKey()` for HD key derivation (22-word mnemonics)
 - Account management: create, update, delete, transfer HBAR
 - Multi-signature: KeyList with M-of-N threshold
 - EVM address alias support
