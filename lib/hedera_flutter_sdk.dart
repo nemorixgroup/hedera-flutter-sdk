@@ -35,3 +35,6 @@ export 'src/models/account_id.dart';
 export 'src/models/hbar.dart';
 export 'src/models/token_id.dart';
 export 'src/models/transaction_id.dart';
+
+// Transactions
+export 'src/transactions/transaction.dart';
