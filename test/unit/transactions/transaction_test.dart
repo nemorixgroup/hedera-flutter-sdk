@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 
 /// Minimal concrete Transaction for testing the base class.
-class _TestTransaction extends Transaction {
+class _TestTransaction extends Transaction<_TestTransaction> {
   @override
   Uint8List toBytes() => Uint8List.fromList([1, 2, 3]);
 }
