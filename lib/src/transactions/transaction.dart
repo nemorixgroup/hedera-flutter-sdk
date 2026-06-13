@@ -16,6 +16,10 @@ import 'package:hedera_flutter_sdk/src/models/transaction_id.dart';
 /// fields and behaviors defined here. Concrete transaction types
 /// extend this class and add their specific fields and logic.
 ///
+/// The generic parameter [T] enables fluent setters to return the
+/// concrete subclass type; allowing chaining of base class and
+/// subclass setters in any order.
+///
 /// Example:
 /// ```dart
 /// final response = await AccountCreateTransaction()
@@ -24,7 +28,7 @@ import 'package:hedera_flutter_sdk/src/models/transaction_id.dart';
 ///     .setMemo('My wallet')
 ///     .execute(client);
 /// ```
-abstract class Transaction {
+abstract class Transaction<T extends Transaction<T>> {
   /// Creates a new transaction with default values.
   Transaction()
       : _memo = '',
@@ -51,9 +55,9 @@ abstract class Transaction {
   /// ```dart
   /// transaction.setNodeAccountId(AccountId.fromString('0.0.3'));
   /// ```
-  Transaction setNodeAccountId(AccountId nodeAccountId) {
+  T setNodeAccountId(AccountId nodeAccountId) {
     _nodeAccountId = nodeAccountId;
-    return this;
+    return this as T;
   }
 
   /// Sets the maximum transaction fee in HBAR.
@@ -64,9 +68,9 @@ abstract class Transaction {
   /// ```dart
   /// transaction.setMaxTransactionFee(Hbar(2));
   /// ```
-  Transaction setMaxTransactionFee(Hbar fee) {
+  T setMaxTransactionFee(Hbar fee) {
     _maxTransactionFee = fee;
-    return this;
+    return this as T;
   }
 
   /// Sets the transaction memo.
@@ -79,7 +83,7 @@ abstract class Transaction {
   /// ```dart
   /// transaction.setMemo('NemorixPay transfer');
   /// ```
-  Transaction setMemo(String memo) {
+  T setMemo(String memo) {
     if (memo.length > HederaConstants.maxMemoLength) {
       throw ArgumentError(
         'Memo exceeds maximum length of '
@@ -88,7 +92,7 @@ abstract class Transaction {
       );
     }
     _memo = memo;
-    return this;
+    return this as T;
   }
 
   /// Sets the valid duration in seconds.
@@ -102,7 +106,7 @@ abstract class Transaction {
   /// ```dart
   /// transaction.setValidDuration(120);
   /// ```
-  Transaction setValidDuration(int seconds) {
+  T setValidDuration(int seconds) {
     if (seconds > HederaConstants.maxTransactionValidDurationSeconds) {
       throw ArgumentError(
         'Valid duration exceeds maximum of '
@@ -111,7 +115,7 @@ abstract class Transaction {
       );
     }
     _validDuration = seconds;
-    return this;
+    return this as T;
   }
 
   /// Sets the transaction ID.
@@ -125,9 +129,9 @@ abstract class Transaction {
   ///   TransactionId.fromString('0.0.12345@1706745600.0')
   /// );
   /// ```
-  Transaction setTransactionId(TransactionId transactionId) {
+  T setTransactionId(TransactionId transactionId) {
     _transactionId = transactionId;
-    return this;
+    return this as T;
   }
 
   // ---- Getters ----
@@ -155,12 +159,12 @@ abstract class Transaction {
   /// ```dart
   /// await transaction.sign(privateKey);
   /// ```
-  Future<Transaction> sign(PrivateKey privateKey) async {
+  Future<T> sign(PrivateKey privateKey) async {
     final bytes = toBytes();
     final signature = await privateKey.sign(bytes);
     final publicKey = await privateKey.derivePublicKey();
     _signatures[publicKey.toHex()] = signature;
-    return this;
+    return this as T;
   }
 
   /// Adds a signature from an external signer.
@@ -171,9 +175,9 @@ abstract class Transaction {
   /// ```dart
   /// transaction.addSignature(publicKey, signature);
   /// ```
-  Transaction addSignature(PublicKey publicKey, List<int> signature) {
+  T addSignature(PublicKey publicKey, List<int> signature) {
     _signatures[publicKey.toHex()] = signature;
-    return this;
+    return this as T;
   }
 
   /// Signs this transaction with the client operator key.
@@ -182,7 +186,7 @@ abstract class Transaction {
   /// ```dart
   /// await transaction.signWithOperator(client);
   /// ```
-  Future<Transaction> signWithOperator(HederaClient client) async {
+  Future<T> signWithOperator(HederaClient client) async {
     final operatorKey = client.operatorPrivateKey;
     if (operatorKey == null) {
       throw const HederaStatusException(
@@ -191,6 +195,7 @@ abstract class Transaction {
     }
     return sign(operatorKey);
   }
+
   // ---- Execution ----
 
   /// Executes this transaction on the Hedera network.
