@@ -41,6 +41,9 @@ import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 ///    ResponseType) can be performed without payment first to
 ///    determine the required fee.
 abstract class Query<R, T extends Query<R, T>> {
+  /// Creates a new [Query] with default values.
+  Query();
+
   AccountId? _nodeAccountId;
 
   // ---- Setters (fluent API) ----
