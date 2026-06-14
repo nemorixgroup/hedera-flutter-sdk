@@ -36,5 +36,10 @@ export 'src/models/hbar.dart';
 export 'src/models/token_id.dart';
 export 'src/models/transaction_id.dart';
 
+// Queries
+export 'src/queries/account_balance_query.dart';
+export 'src/queries/query.dart';
+
 // Transactions
+export 'src/transactions/account_create_transaction.dart';
 export 'src/transactions/transaction.dart';
