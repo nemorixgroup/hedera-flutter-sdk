@@ -5,21 +5,70 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Current Features (v0.0.6-dev)
+## 0.0.7-dev
 
+Phase 2 in progress: Cryptography and Account Management.
+
+### Added
+- `Transaction<T>`: abstract base class for all Hedera transactions
+  using Generic Self-Type pattern for fluent API chaining in any order
+  - `setNodeAccountId()`, `setMaxTransactionFee()`, `setMemo()`,
+    `setValidDuration()`, `setTransactionId()`
+  - `sign()`, `addSignature()`, `signWithOperator()`
+  - `execute()` stub (gRPC pending)
+  - `TransactionResponse`, `TransactionReceipt`, `TransactionRecord`
+- `AccountCreateTransaction`: creates a new Hedera account
+  - `setKey()` (required), `setInitialBalance()`,
+    `setMaxAutomaticTokenAssociations()`, `setReceiverSignatureRequired()`
+  - `toBytes()` serializes via `CryptoCreateTransactionBody` Protobuf
+- `Query<R, T>`: abstract base class for all Hedera queries
+  using Generic Self-Type pattern; payment support pending
+  (requires `CryptoTransferTransaction`)
+- `AccountBalanceQuery`: queries HBAR balance of a Hedera account
+  - `setAccountId()` (required)
+  - `toBytes()` serializes via `CryptoGetAccountBalanceQuery` Protobuf
+- `example/`: restructured into phase-based subfolders
+
+### Changed
+- `example/hedera_flutter_sdk_example.dart`: refactored as entry point;
+  imports phase2 examples
+- pubspec.yaml: version bumped to 0.0.7-dev
+- README.md: Phase 2 checklist updated with completed items
+
+### Status
+Phase 2 in progress: Cryptography and Account Management.  
+Not ready for production use.  
+Next: CryptoTransferTransaction and AccountInfoQuery.
+
+## 0.0.6-dev
+
+Phase 2 in progress: Cryptography and Account Management.
+
+### Added
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
-- `Mnemonic` with BIP-39 generation, validation, and recovery in English and
-  Spanish (generate24, generate12, fromWords, fromString, toSeed, validate)
-- `MnemonicLanguage` enum with `english` and `spanish` options
+- `Mnemonic.toPrivateKey()`: HD key derivation from mnemonic via BIP-39
+  standard; supports optional passphrase; 12 and 24-word mnemonics
+- `Mnemonic.toLegacyPrivateKey()`: legacy key derivation for 12 and
+  24-word mnemonics; 22-word legacy pending (UnsupportedError with reference
+  to github.com/hashgraph/hedera-sdk-go)
 - Official BIP-39 wordlists (2048 words each; English and Spanish)
-- `Mnemonic.toPrivateKey()` and `toLegacyPrivateKey()` for HD key
-  derivation (12 and 24-word mnemonics; BIP-39 standard)
-- `PrivateKey` with ED25519 and ECDSA generation, import, and signing
-- `PublicKey` with derivation, import, and ED25519 signature verification
-- Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
-- `HederaStatusException` and `HederaStatusCode` for typed error handling
-- `HederaConstants` with protocol-level values (ports, fees, endpoints)
-- 335 Dart classes generated from Hedera HAPI Protobuf definitions
+- `Mnemonic.fromString()`: create Mnemonic from space-separated phrase
+- `Mnemonic.validate()`: BIP-39 checksum validation for English and Spanish
+- `PrivateKey.derivePublicKey()`: async ED25519 public key derivation
+- `HederaConstants`: ASN.1/DER prefix constants
+  - `ed25519PrivateKeyPrefix` (OID 1.3.101.112 - RFC 8410)
+  - `ecdsaPrivateKeyPrefix` (OID 1.3.132.0.10)
+  - `ed25519PublicKeyPrefix`
+- README.md: Quick Guide expanded with PrivateKey and PublicKey sections
+
+### Changed
+- README.md: Current Features updated with toPrivateKey and toLegacyPrivateKey  
+- README.md: Planned Features updated; 22-word legacy mnemonic marked pending
+
+### Status
+Phase 2 in progress: Cryptography and Account Management.  
+Not ready for production use.  
+Next: Transaction base class and Account Management.
 
 ## 0.0.5-dev
 

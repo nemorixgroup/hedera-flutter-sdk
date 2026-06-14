@@ -292,13 +292,26 @@ void main() {
       });
 
       test('returns false for Spanish mnemonic with tampered words', () async {
-        final mnemonic = await Mnemonic.generate12(
-          language: MnemonicLanguage.spanish,
-        );
-        // Replace last word with first word to break checksum
-        final tamperedWords = List<String>.from(mnemonic.words);
-        tamperedWords[tamperedWords.length - 1] = tamperedWords[0];
-        final tampered = await Mnemonic.fromWords(tamperedWords);
+        // Generate multiple mnemonics until we find one where
+        // swapping first and last word breaks the checksum
+        Mnemonic? mnemonic;
+        List<String>? tamperedWords;
+
+        for (var i = 0; i < 10; i++) {
+          final candidate = await Mnemonic.generate12(
+            language: MnemonicLanguage.spanish,
+          );
+          final words = List<String>.from(candidate.words);
+          if (words.first != words.last) {
+            mnemonic = candidate;
+            tamperedWords = words;
+            tamperedWords[tamperedWords.length - 1] = tamperedWords[0];
+            break;
+          }
+        }
+
+        expect(mnemonic, isNotNull);
+        final tampered = await Mnemonic.fromWords(tamperedWords!);
         expect(tampered.validate(), isFalse);
       });
     });
