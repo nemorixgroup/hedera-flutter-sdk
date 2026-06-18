@@ -44,4 +44,5 @@ export 'src/queries/query.dart';
 
 // Transactions
 export 'src/transactions/account_create_transaction.dart';
+export 'src/transactions/account_update_transaction.dart';
 export 'src/transactions/transaction.dart';
