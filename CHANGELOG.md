@@ -5,6 +5,39 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.0.8-dev
+
+Phase 2 in progress: Account Management CRUD cycle completed.
+
+### Added
+- `AccountInfo`: model representing full Hedera account information
+  - accountId, key, balance, deleted, memo, receiverSignatureRequired,
+    maxAutomaticTokenAssociations, ownedNfts
+- `AccountInfoQuery`: queries full account information
+  - `setAccountId()` (required)
+  - `toBytes()` serializes via `CryptoGetInfoQuery` Protobuf
+- `AccountUpdateTransaction`: updates an existing Hedera account
+  - `setAccountIdToUpdate()` (required); all other fields optional
+  - `setKey()`, `setNewMemo()`, `setReceiverSignatureRequired()`,
+    `setMaxAutomaticTokenAssociations()`
+  - Optional fields use Google Protobuf wrapper types (`StringValue`,
+    `BoolValue`, `Int32Value`) to distinguish "not set" from falsy values
+  - `toBytes()` serializes via `CryptoUpdateTransactionBody` Protobuf
+- `AccountDeleteTransaction`: deletes an existing Hedera account
+  - `setAccountId()` (required) - account to delete
+  - `setTransferAccountId()` (required) - receives remaining HBAR balance
+  - `toBytes()` serializes via `CryptoDeleteTransactionBody` Protobuf
+- 61 new unit tests (321/321 total passing)
+
+### Changed
+- pubspec.yaml: version bumped to 0.0.8-dev
+
+### Status
+Phase 2 in progress: Account Management CRUD cycle completed
+(Create, Read, Update, Delete).  
+Not ready for production use.  
+Next: CryptoTransferTransaction.
+
 ## 0.0.7-dev
 
 Phase 2 in progress: Cryptography and Account Management.
