@@ -38,8 +38,12 @@ export 'src/models/transaction_id.dart';
 
 // Queries
 export 'src/queries/account_balance_query.dart';
+export 'src/queries/account_info.dart';
+export 'src/queries/account_info_query.dart';
 export 'src/queries/query.dart';
 
 // Transactions
 export 'src/transactions/account_create_transaction.dart';
+export 'src/transactions/account_delete_transaction.dart';
+export 'src/transactions/account_update_transaction.dart';
 export 'src/transactions/transaction.dart';

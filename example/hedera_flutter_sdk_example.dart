@@ -9,12 +9,16 @@ import 'phase2/wallet_example.dart';
 /// This file is the entry point for all SDK examples.
 /// Each section corresponds to a phase of development.
 ///
+/// Implementation details can be found in:
+/// https://github.com/nemorixgroup/hedera-flutter-sdk/tree/main/example/
+///
 /// Running this example:
 /// ```sh
 /// dart run example/hedera_flutter_sdk_example.dart
 /// ```
 Future<void> main() async {
   // -- Phase 2: Cryptography and Account Management --
+  // See: example/phase2/
   await walletExamples();
   await privateKeyExamples();
   await publicKeyExamples();

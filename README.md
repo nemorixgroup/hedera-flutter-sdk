@@ -213,6 +213,17 @@ Este SDK esta siendo desarrollado con soporte nativo para la region:
 Siguenos para actualizaciones:
 **hedera@nemorixpay.com**
 
+## Support This Project
+
+If this SDK is useful to you or your team, consider supporting its
+development. Every contribution helps cover infrastructure,
+documentation, and the time invested in building and maintaining this
+open source tool for the Hedera and Flutter community. Thank you!
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support-FFDD00?logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/nemorixgroupllc)
+[![Sponsor](https://img.shields.io/badge/Sponsor-GitHub-EA4AAA?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/nemorixgroup)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/nemorixgroupllc)
+
 ---
 
 <p align="center">
