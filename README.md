@@ -34,7 +34,7 @@ This project closes that gap.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.0.6-dev
+  hedera_flutter_sdk: ^0.0.9-dev
 ```
 
 ## Quick Guide
@@ -155,32 +155,39 @@ final isValid = await publicKey.verify(
 print(isValid); // true
 ```
 
-## Current Features (v0.0.6-dev)
+## Current Features (v0.0.9-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
   Spanish (generate24, generate12, fromWords, fromString, toSeed, validate)
 - `MnemonicLanguage` enum with `english` and `spanish` options
 - Official BIP-39 wordlists (2048 words each; English and Spanish)
+- `Mnemonic.toPrivateKey()` and `toLegacyPrivateKey()` for HD key
+  derivation (12 and 24-word mnemonics; 22-word raises UnsupportedError)
 - `PrivateKey` with ED25519 and ECDSA generation, import, and signing
 - `PublicKey` with derivation, import, and ED25519 signature verification
 - Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
 - `HederaStatusException` and `HederaStatusCode` for typed error handling
 - `HederaConstants` with protocol-level values (ports, fees, endpoints)
 - 335 Dart classes generated from Hedera HAPI Protobuf definitions
-- `Mnemonic.toPrivateKey()` and `toLegacyPrivateKey()` 
-  for HD key derivation (12 and 24-word mnemonics)
+- `Transaction<T>`: generic base class with fluent API, signing,
+  and Protobuf serialization (Generic Self-Type pattern)
+- `Query<R,T>`: generic base class with fluent API and Protobuf serialization
+- Account management transactions: `AccountCreateTransaction`,
+  `AccountUpdateTransaction`, `AccountDeleteTransaction`
+- `CryptoTransferTransaction`: HBAR transfers with sum-zero validation
+- Account queries: `AccountBalanceQuery`, `AccountInfoQuery` with
+  `AccountInfo` model
 
 ## Planned Features
 
-- `toLegacyPrivateKey()` for HD key derivation (22-word mnemonics)
-- Account management: create, update, delete, transfer HBAR
-- Multi-signature: KeyList with M-of-N threshold
+- gRPC execution: `execute()` via `HederaClient` for transactions and queries
+- `TransactionResponse`: `getReceipt()` and `getRecord()` via gRPC polling
+- Multi-signature: `KeyList` with M-of-N threshold
 - EVM address alias support
 - Hedera Token Service (HTS): fungible tokens, NFTs, native KYC
 - Mirror Node REST client with real-time WebSocket subscriptions
 - Hedera Consensus Service (HCS)
-- Transaction base class with Protobuf serialization
 
 ## Real-World Use Case
 
