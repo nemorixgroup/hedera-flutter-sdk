@@ -76,5 +76,20 @@ Future<void> walletExamples() async {
   print('Safe toString: $privateKey');
   print('');
 
+  // 10. EVM address alias support
+  print('Step 10: EVM address alias support');
+  final nativeAccount = AccountId.fromString('0.0.12345');
+  print('Native AccountId: $nativeAccount');
+  print('Is EVM address: ${nativeAccount.isEvmAddress}');
+  print('');
+
+  final evmAccount = AccountId.fromEvmAddress(
+    '0x00000000000000000000000000000000000000e5',
+  );
+  print('EVM AccountId: $evmAccount');
+  print('Is EVM address: ${evmAccount.isEvmAddress}');
+  print('Useful for MetaMask and EVM-compatible wallet integration');
+  print('');
+
   print('=== Mnemonic examples complete ===\n');
 }
