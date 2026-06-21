@@ -178,13 +178,13 @@ print(isValid); // true
 - `CryptoTransferTransaction`: HBAR transfers with sum-zero validation
 - Account queries: `AccountBalanceQuery`, `AccountInfoQuery` with
   `AccountInfo` model
+- EVM address alias support
 
 ## Planned Features
 
 - gRPC execution: `execute()` via `HederaClient` for transactions and queries
 - `TransactionResponse`: `getReceipt()` and `getRecord()` via gRPC polling
 - Multi-signature: `KeyList` with M-of-N threshold
-- EVM address alias support
 - Hedera Token Service (HTS): fungible tokens, NFTs, native KYC
 - Mirror Node REST client with real-time WebSocket subscriptions
 - Hedera Consensus Service (HCS)

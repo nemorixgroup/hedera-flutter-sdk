@@ -5,6 +5,46 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.0.9-dev
+
+Phase 2 in progress: HBAR transfers and EVM address compatibility.
+
+### Added
+- `CryptoTransferTransaction`: transfers HBAR between Hedera accounts
+  - `addHbarTransfer(AccountId, Hbar)`, callable multiple times
+  - `transferCount` getter
+  - `toBytes()` validates that transfer amounts sum to zero before
+    serializing via `CryptoTransferTransactionBody` Protobuf
+  - throws `ArgumentError` if no transfers added or sum is not zero
+- `AccountId.evm()` and `AccountId.fromEvmAddress()`: EVM-compatible
+  address alias support (20-byte addresses, e.g. for MetaMask)
+  - `isEvmAddress` getter
+  - `toString()` handles both native (shard.realm.num) and EVM (0x...) formats
+- `AccountId.toProto()`: centralizes `AccountID` Protobuf construction,
+  correctly using the `alias` field for EVM accounts (`oneof` with
+  `accountNum`)
+- `example/phase2/transaction_example.dart`: expanded with
+  `AccountUpdateTransaction`, `AccountDeleteTransaction`, and
+  `CryptoTransferTransaction` examples
+- `example/phase2/query_example.dart`: expanded with `AccountInfoQuery`
+  example and updated full workflow preview
+- 42 new unit tests (321/321 -> 363/363 total passing)
+
+### Changed
+- `AccountBalanceQuery`, `AccountInfoQuery`, `AccountUpdateTransaction`,
+  `AccountDeleteTransaction`, `CryptoTransferTransaction`: refactored to
+  use `AccountId.toProto()` instead of manually constructing `AccountID`,
+  reducing duplication and enabling transparent EVM alias support
+- README.md: Current Features and Planned Features updated to reflect
+  Phase 2 progress
+- pubspec.yaml: version bumped to 0.0.9-dev
+
+### Status
+Phase 2 in progress: Account Management CRUD cycle complete, HBAR
+transfers and EVM address alias support added.  
+Not ready for production use.  
+Next: gRPC execution (`execute()` via `HederaClient`).
+
 ## 0.0.8-dev
 
 Phase 2 in progress: Account Management CRUD cycle completed.
