@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:fixnum/fixnum.dart';
+// import 'package:fixnum/fixnum.dart';
 import 'package:hedera_flutter_sdk/src/crypto/public_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
@@ -130,12 +130,16 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
       );
     }
 
+    // final body = CryptoUpdateTransactionBody(
+    //   accountIDToUpdate: AccountID(
+    //     shardNum: Int64(_accountIdToUpdate!.shardNum),
+    //     realmNum: Int64(_accountIdToUpdate!.realmNum),
+    //     accountNum: Int64(_accountIdToUpdate!.accountNum),
+    //   ),
+    // );
+
     final body = CryptoUpdateTransactionBody(
-      accountIDToUpdate: AccountID(
-        shardNum: Int64(_accountIdToUpdate!.shardNum),
-        realmNum: Int64(_accountIdToUpdate!.realmNum),
-        accountNum: Int64(_accountIdToUpdate!.accountNum),
-      ),
+      accountIDToUpdate: _accountIdToUpdate!.toProto(),
     );
 
     if (_key != null) {

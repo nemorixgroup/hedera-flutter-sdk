@@ -83,13 +83,20 @@ class CryptoTransferTransaction extends Transaction<CryptoTransferTransaction> {
       );
     }
 
+    // final accountAmounts = _transfers.map((transfer) {
+    //   return AccountAmount(
+    //     accountID: AccountID(
+    //       shardNum: Int64(transfer.accountId.shardNum),
+    //       realmNum: Int64(transfer.accountId.realmNum),
+    //       accountNum: Int64(transfer.accountId.accountNum),
+    //     ),
+    //     amount: Int64(transfer.amount.toTinybars()),
+    //   );
+    // }).toList();
+
     final accountAmounts = _transfers.map((transfer) {
       return AccountAmount(
-        accountID: AccountID(
-          shardNum: Int64(transfer.accountId.shardNum),
-          realmNum: Int64(transfer.accountId.realmNum),
-          accountNum: Int64(transfer.accountId.accountNum),
-        ),
+        accountID: transfer.accountId.toProto(),
         amount: Int64(transfer.amount.toTinybars()),
       );
     }).toList();

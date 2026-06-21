@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
-import 'package:fixnum/fixnum.dart';
+// import 'package:fixnum/fixnum.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
-import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
+// import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_get_account_balance.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/query_header.pb.dart';
 import 'package:hedera_flutter_sdk/src/queries/query.dart';
@@ -58,13 +58,18 @@ class AccountBalanceQuery extends Query<Hbar, AccountBalanceQuery> {
       );
     }
 
+    // final query = CryptoGetAccountBalanceQuery(
+    //   header: QueryHeader(),
+    //   accountID: AccountID(
+    //     shardNum: Int64(_accountId!.shardNum),
+    //     realmNum: Int64(_accountId!.realmNum),
+    //     accountNum: Int64(_accountId!.accountNum),
+    //   ),
+    // );
+
     final query = CryptoGetAccountBalanceQuery(
       header: QueryHeader(),
-      accountID: AccountID(
-        shardNum: Int64(_accountId!.shardNum),
-        realmNum: Int64(_accountId!.realmNum),
-        accountNum: Int64(_accountId!.accountNum),
-      ),
+      accountID: _accountId!.toProto(),
     );
 
     return Uint8List.fromList(query.writeToBuffer());
