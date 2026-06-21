@@ -46,4 +46,5 @@ export 'src/queries/query.dart';
 export 'src/transactions/account_create_transaction.dart';
 export 'src/transactions/account_delete_transaction.dart';
 export 'src/transactions/account_update_transaction.dart';
+export 'src/transactions/crypto_transfer_transaction.dart';
 export 'src/transactions/transaction.dart';

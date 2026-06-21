@@ -19,9 +19,20 @@ import 'phase2/wallet_example.dart';
 Future<void> main() async {
   // -- Phase 2: Cryptography and Account Management --
   // See: example/phase2/
+
+  // Mnemonic generation/recovery, HD key derivation, EVM address alias
   await walletExamples();
+
+  // PrivateKey generation, import, and signing (ED25519/ECDSA)
   await privateKeyExamples();
+
+  // PublicKey derivation, import, and signature verification
   await publicKeyExamples();
+
+  // AccountCreateTransaction, AccountUpdateTransaction,
+  // AccountDeleteTransaction, CryptoTransferTransaction
   await transactionExamples();
+
+  // AccountBalanceQuery, AccountInfoQuery
   await queryExamples();
 }

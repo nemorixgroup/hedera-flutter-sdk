@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:fixnum/fixnum.dart';
+// import 'package:fixnum/fixnum.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
-import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
+// import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_delete.pb.dart';
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 
@@ -82,17 +82,22 @@ class AccountDeleteTransaction extends Transaction<AccountDeleteTransaction> {
       );
     }
 
+    // final body = CryptoDeleteTransactionBody(
+    //   deleteAccountID: AccountID(
+    //     shardNum: Int64(_accountId!.shardNum),
+    //     realmNum: Int64(_accountId!.realmNum),
+    //     accountNum: Int64(_accountId!.accountNum),
+    //   ),
+    //   transferAccountID: AccountID(
+    //     shardNum: Int64(_transferAccountId!.shardNum),
+    //     realmNum: Int64(_transferAccountId!.realmNum),
+    //     accountNum: Int64(_transferAccountId!.accountNum),
+    //   ),
+    // );
+
     final body = CryptoDeleteTransactionBody(
-      deleteAccountID: AccountID(
-        shardNum: Int64(_accountId!.shardNum),
-        realmNum: Int64(_accountId!.realmNum),
-        accountNum: Int64(_accountId!.accountNum),
-      ),
-      transferAccountID: AccountID(
-        shardNum: Int64(_transferAccountId!.shardNum),
-        realmNum: Int64(_transferAccountId!.realmNum),
-        accountNum: Int64(_transferAccountId!.accountNum),
-      ),
+      deleteAccountID: _accountId!.toProto(),
+      transferAccountID: _transferAccountId!.toProto(),
     );
 
     return Uint8List.fromList(body.writeToBuffer());
