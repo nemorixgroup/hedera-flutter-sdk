@@ -16,6 +16,7 @@ import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
 import 'package:hedera_flutter_sdk/src/proto/timestamp.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart'
     as hedera_transaction;
+import 'package:hedera_flutter_sdk/src/proto/transaction_contents.pb.dart';
 
 /// Base class for all Hedera transactions.
 ///
@@ -254,6 +255,48 @@ abstract class Transaction<T extends Transaction<T>> {
     applyToBody(body);
     return body;
   }
+
+  /// Builds a [SignedTransaction] ready for gRPC submission.
+  ///
+  /// Serializes the [hedera_transaction.TransactionBody] built by
+  /// [buildBody] into bytes, then wraps them with the current
+  /// signature map into a [SignedTransaction].
+  ///
+  /// Must be called after [sign] or [signWithOperator] to include
+  /// valid signatures. If no signatures have been added, the
+  /// [SignedTransaction] will have an empty signature map.
+  ///
+  /// Throws [ArgumentError] if the client has no operator account ID.
+  SignedTransaction buildSignedTransaction(HederaClient client) {
+    final body = buildBody(client);
+    final bodyBytes = body.writeToBuffer();
+
+    final sigPairs = _signatures.entries.map((entry) {
+      final pubKeyHex = entry.key;
+      final signatureBytes = entry.value;
+      final pubKeyBytes = _hexToBytes(pubKeyHex);
+
+      return SignaturePair(
+        pubKeyPrefix: pubKeyBytes,
+        ed25519: signatureBytes,
+      );
+    }).toList();
+
+    return SignedTransaction(
+      bodyBytes: bodyBytes,
+      sigMap: SignatureMap(sigPair: sigPairs),
+    );
+  }
+
+  /// Converts a hex string to a list of bytes.
+  static List<int> _hexToBytes(String hex) {
+    final result = <int>[];
+    for (var i = 0; i < hex.length; i += 2) {
+      result.add(int.parse(hex.substring(i, i + 2), radix: 16));
+    }
+    return result;
+  }
+
   // ---- Execution ----
 
   /// Executes this transaction on the Hedera network.
