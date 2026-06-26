@@ -5,6 +5,7 @@ import 'package:hedera_flutter_sdk/src/crypto/public_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_update.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 import 'package:protobuf/well_known_types/google/protobuf/wrappers.pb.dart';
 
@@ -163,5 +164,51 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
     }
 
     return Uint8List.fromList(body.writeToBuffer());
+  }
+
+  // ---- Transaction body construction ----
+
+  /// Applies the AccountUpdateTransaction-specific body fields to [body].
+  ///
+  /// Sets the cryptoUpdateAccount field on [body] with the account to
+  /// update and any optional fields that were explicitly set: key,
+  /// memo, receiver signature requirement, and maximum automatic token
+  /// associations. Fields not set are left unchanged on the network.
+  ///
+  /// Throws [ArgumentError] if [accountIdToUpdate] has not been set.
+  @override
+  void applyToBody(hedera_tx.TransactionBody body) {
+    if (_accountIdToUpdate == null) {
+      throw ArgumentError(
+        'AccountUpdateTransaction requires an accountIdToUpdate. '
+        'Call setAccountIdToUpdate() first.',
+      );
+    }
+
+    final updateBody = CryptoUpdateTransactionBody(
+      accountIDToUpdate: _accountIdToUpdate!.toProto(),
+    );
+
+    if (_key != null) {
+      updateBody.key = Key(ed25519: _key!.bytes);
+    }
+
+    if (_newMemo != null) {
+      updateBody.memo = StringValue(value: _newMemo);
+    }
+
+    if (_receiverSigRequired != null) {
+      updateBody.receiverSigRequiredWrapper = BoolValue(
+        value: _receiverSigRequired,
+      );
+    }
+
+    if (_maxAutomaticTokenAssociations != null) {
+      updateBody.maxAutomaticTokenAssociations = Int32Value(
+        value: _maxAutomaticTokenAssociations,
+      );
+    }
+
+    body.cryptoUpdateAccount = updateBody;
   }
 }

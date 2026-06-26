@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 // import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_delete.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 
 /// Deletes an existing Hedera account.
@@ -101,5 +102,36 @@ class AccountDeleteTransaction extends Transaction<AccountDeleteTransaction> {
     );
 
     return Uint8List.fromList(body.writeToBuffer());
+  }
+
+  // ---- Transaction body construction ----
+
+  /// Applies the AccountDeleteTransaction-specific body fields to [body].
+  ///
+  /// Sets the cryptoDelete field on [body] with the account to delete
+  /// and the transfer account that will receive any remaining HBAR
+  /// balance.
+  ///
+  /// Throws [ArgumentError] if [accountId] or [transferAccountId]
+  /// have not been set.
+  @override
+  void applyToBody(hedera_tx.TransactionBody body) {
+    if (_accountId == null) {
+      throw ArgumentError(
+        'AccountDeleteTransaction requires an accountId. '
+        'Call setAccountId() first.',
+      );
+    }
+    if (_transferAccountId == null) {
+      throw ArgumentError(
+        'AccountDeleteTransaction requires a transferAccountId. '
+        'Call setTransferAccountId() first.',
+      );
+    }
+
+    body.cryptoDelete = CryptoDeleteTransactionBody(
+      deleteAccountID: _accountId!.toProto(),
+      transferAccountID: _transferAccountId!.toProto(),
+    );
   }
 }

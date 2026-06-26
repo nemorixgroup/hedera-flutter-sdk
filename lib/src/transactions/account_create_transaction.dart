@@ -5,6 +5,7 @@ import 'package:hedera_flutter_sdk/src/crypto/public_key.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_create.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 
 /// Creates a new Hedera account.
@@ -131,5 +132,37 @@ class AccountCreateTransaction extends Transaction<AccountCreateTransaction> {
     }
 
     return Uint8List.fromList(body.writeToBuffer());
+  }
+
+  // ---- Transaction body construction ----
+
+  /// Applies the AccountCreateTransaction-specific body fields to [body].
+  ///
+  /// Sets the cryptoCreateAccount field on [body] with the key, initial
+  /// balance, memo, receiver signature requirement, and optional maximum
+  /// automatic token associations configured on this transaction.
+  ///
+  /// Throws [ArgumentError] if [key] has not been set.
+  @override
+  void applyToBody(hedera_tx.TransactionBody body) {
+    if (_key == null) {
+      throw ArgumentError(
+        'AccountCreateTransaction requires a key. Call setKey() first.',
+      );
+    }
+
+    final cryptoBody = CryptoCreateTransactionBody(
+      key: Key(ed25519: _key!.bytes),
+      initialBalance: Int64(_initialBalance.toTinybars()),
+      memo: memo,
+      receiverSigRequired: _receiverSigRequired,
+    );
+
+    if (_maxAutomaticTokenAssociations != null) {
+      cryptoBody.maxAutomaticTokenAssociations =
+          _maxAutomaticTokenAssociations!;
+    }
+
+    body.cryptoCreateAccount = cryptoBody;
   }
 }
