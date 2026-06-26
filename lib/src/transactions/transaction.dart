@@ -11,6 +11,7 @@ import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
 import 'package:hedera_flutter_sdk/src/models/transaction_id.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
     as hedera_duration;
 import 'package:hedera_flutter_sdk/src/proto/timestamp.pb.dart';
@@ -299,17 +300,56 @@ abstract class Transaction<T extends Transaction<T>> {
 
   // ---- Execution ----
 
+  /// Executes this transaction via gRPC using the given
+  /// [CryptoServiceClient].
+  ///
+  /// Each subclass routes the transaction to the correct gRPC
+  /// method — for example AccountCreateTransaction calls
+  /// `client.createAccount()`.
+  ///
+  /// Throws [HederaStatusException] if the node returns a
+  /// non-OK precheck code.
+  Future<void> executeGrpc(
+    CryptoServiceClient cryptoClient,
+    hedera_transaction.Transaction tx,
+  );
+
   /// Executes this transaction on the Hedera network.
   ///
-  /// Signs with the operator key if no signatures have been added.
+  /// Signs with the operator key if no signatures have been added,
+  /// builds the signed transaction envelope, and submits it via gRPC.
+  ///
+  /// Throws [ArgumentError] if the client has no operator.
+  /// Throws [HederaStatusException] if the node rejects the transaction.
   ///
   /// Example:
   /// ```dart
-  /// final response = await transaction.execute(client);
+  /// final response = await AccountCreateTransaction()
+  ///     .setKey(publicKey)
+  ///     .setInitialBalance(Hbar(10))
+  ///     .execute(client);
   /// ```
-  // TODO(Phase2): Implement gRPC execution via HederaClient
   Future<TransactionResponse> execute(HederaClient client) async {
-    throw UnimplementedError('Transaction.execute; Phase 2');
+    if (!isSigned) {
+      await signWithOperator(client);
+    }
+
+    final signedTx = buildSignedTransaction(client);
+    final grpcTx = hedera_transaction.Transaction(
+      signedTransactionBytes: signedTx.writeToBuffer(),
+    );
+
+    await executeGrpc(client.cryptoClient, grpcTx);
+
+    final now = DateTime.now();
+    final txId = _transactionId ??
+        TransactionId(
+          accountId: client.operatorAccountId!.toString(),
+          validStartSeconds: now.millisecondsSinceEpoch ~/ 1000,
+          validStartNanos: (now.millisecondsSinceEpoch % 1000) * 1000000,
+        );
+
+    return TransactionResponse(transactionId: txId);
   }
 
   // ---- Serialization ----
