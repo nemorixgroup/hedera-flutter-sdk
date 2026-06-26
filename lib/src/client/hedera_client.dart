@@ -127,11 +127,21 @@ class HederaClient {
   /// Returns a [ClientChannel] connected to the active network node.
   ///
   /// The channel is created lazily on first access and reused
-  /// for subsequent calls. Uses TLS on port 50212.
+  /// for subsequent calls.
+  ///
+  /// Uses insecure connection (port 50211) for testnet and previewnet,
+  /// and TLS (port 50212) for mainnet to ensure production security.
   ClientChannel get channel {
     _channel ??= ClientChannel(
       _nodeEndpoint,
-      port: HederaConstants.grpcTlsPort,
+      port: network == HederaNetwork.mainnet
+          ? HederaConstants.grpcTlsPort
+          : HederaConstants.grpcPort,
+      options: ChannelOptions(
+        credentials: network == HederaNetwork.mainnet
+            ? const ChannelCredentials.secure()
+            : const ChannelCredentials.insecure(),
+      ),
     );
     return _channel!;
   }
