@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:hedera_flutter_sdk/src/crypto/public_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_update.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
@@ -210,5 +211,14 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
     }
 
     body.cryptoUpdateAccount = updateBody;
+  }
+
+  /// Executes this transaction via the updateAccount gRPC method.
+  @override
+  Future<void> executeGrpc(
+    CryptoServiceClient cryptoClient,
+    hedera_tx.Transaction tx,
+  ) async {
+    await cryptoClient.updateAccount(tx);
   }
 }

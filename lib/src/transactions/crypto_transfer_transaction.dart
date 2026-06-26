@@ -4,6 +4,7 @@ import 'package:fixnum/fixnum.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_transfer.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
@@ -150,6 +151,15 @@ class CryptoTransferTransaction extends Transaction<CryptoTransferTransaction> {
     body.cryptoTransfer = CryptoTransferTransactionBody(
       transfers: TransferList(accountAmounts: accountAmounts),
     );
+  }
+
+  /// Executes this transaction via the cryptoTransfer gRPC method.
+  @override
+  Future<void> executeGrpc(
+    CryptoServiceClient cryptoClient,
+    hedera_tx.Transaction tx,
+  ) async {
+    await cryptoClient.cryptoTransfer(tx);
   }
 }
 
