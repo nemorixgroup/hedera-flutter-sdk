@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
+import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 
 /// Minimal concrete Transaction for testing the base class.
@@ -16,6 +17,13 @@ class _TestTransaction extends Transaction<_TestTransaction> {
   /// No-op implementation for testing purposes.
   @override
   void applyToBody(hedera_tx.TransactionBody body) {}
+
+  /// No-op implementation for testing purposes.
+  @override
+  Future<void> executeGrpc(
+    CryptoServiceClient cryptoClient,
+    hedera_tx.Transaction tx,
+  ) async {}
 }
 
 void main() {
@@ -213,12 +221,12 @@ void main() {
     // ---- execute ----
 
     group('execute', () {
-      test('throws UnimplementedError', () async {
+      test('execute throws ArgumentError if client has no operator', () {
         final tx = _TestTransaction();
         final client = HederaClient.forTestnet();
         expect(
           () => tx.execute(client),
-          throwsA(isA<UnimplementedError>()),
+          throwsA(isA<HederaStatusException>()),
         );
       });
     });

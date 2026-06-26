@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
+import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/proto/transaction_contents.pb.dart';
 
@@ -10,8 +11,16 @@ class _TestTransaction extends Transaction<_TestTransaction> {
   @override
   Uint8List toBytes() => Uint8List.fromList([1, 2, 3]);
 
+  /// No-op implementation for testing purposes.
   @override
   void applyToBody(hedera_tx.TransactionBody body) {}
+
+  /// No-op implementation for testing purposes.
+  @override
+  Future<void> executeGrpc(
+    CryptoServiceClient cryptoClient,
+    hedera_tx.Transaction tx,
+  ) async {}
 }
 
 void main() {
