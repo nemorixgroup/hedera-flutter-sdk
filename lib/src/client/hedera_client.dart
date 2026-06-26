@@ -1,8 +1,10 @@
+import 'package:grpc/grpc.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_network.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
 import 'package:hedera_flutter_sdk/src/crypto/private_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
+import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 
 /// The main entry point for interacting with the Hedera network.
 ///
@@ -116,5 +118,54 @@ class HederaClient {
         return '${HederaConstants.previewnetNodeEndpoint}'
             ':${HederaConstants.grpcPort}';
     }
+  }
+
+  // ---- gRPC ----
+
+  ClientChannel? _channel;
+
+  /// Returns a [ClientChannel] connected to the active network node.
+  ///
+  /// The channel is created lazily on first access and reused
+  /// for subsequent calls. Uses TLS on port 50212.
+  ClientChannel get channel {
+    _channel ??= ClientChannel(
+      _nodeEndpoint,
+      port: HederaConstants.grpcTlsPort,
+    );
+    return _channel!;
+  }
+
+  /// Returns a [CryptoServiceClient] for account and transfer operations.
+  ///
+  /// Example:
+  /// ```dart
+  /// final response = await client.cryptoClient.createAccount(tx);
+  /// ```
+  CryptoServiceClient get cryptoClient => CryptoServiceClient(channel);
+
+  /// The hostname for the active network node.
+  String get _nodeEndpoint {
+    switch (network) {
+      case HederaNetwork.mainnet:
+        return HederaConstants.mainnetNodeEndpoint;
+      case HederaNetwork.testnet:
+        return HederaConstants.testnetNodeEndpoint;
+      case HederaNetwork.previewnet:
+        return HederaConstants.previewnetNodeEndpoint;
+    }
+  }
+
+  /// Closes the gRPC channel and releases resources.
+  ///
+  /// Call this when the client is no longer needed.
+  ///
+  /// Example:
+  /// ```dart
+  /// await client.close();
+  /// ```
+  Future<void> close() async {
+    await _channel?.shutdown();
+    _channel = null;
   }
 }
