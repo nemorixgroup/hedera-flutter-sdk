@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:fixnum/fixnum.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_client.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_status_code.dart';
@@ -9,6 +10,12 @@ import 'package:hedera_flutter_sdk/src/crypto/public_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
 import 'package:hedera_flutter_sdk/src/models/transaction_id.dart';
+import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
+    as hedera_duration;
+import 'package:hedera_flutter_sdk/src/proto/timestamp.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart'
+    as hedera_transaction;
 
 /// Base class for all Hedera transactions.
 ///
@@ -196,6 +203,57 @@ abstract class Transaction<T extends Transaction<T>> {
     return sign(operatorKey);
   }
 
+  // ---- Transaction body construction ----
+
+  /// Applies the specific transaction body fields to [body].
+  ///
+  /// Each subclass implements this to set its specific field on the
+  /// [hedera_transaction.TransactionBody], for example
+  /// `body.cryptoCreateAccount = ...`.
+  void applyToBody(hedera_transaction.TransactionBody body);
+
+  /// Builds a complete [hedera_transaction.TransactionBody] for this
+  /// transaction, including the transaction ID, node account ID,
+  /// transaction fee, valid duration, memo, and the specific body
+  /// fields set by [applyToBody].
+  ///
+  /// The operator account ID from [client] is used to generate the
+  /// transaction ID. If no node account ID is set, defaults to
+  /// `0.0.3` (Hedera testnet node).
+  ///
+  /// Throws [ArgumentError] if the client has no operator account ID.
+  hedera_transaction.TransactionBody buildBody(HederaClient client) {
+    final operatorId = client.operatorAccountId;
+    if (operatorId == null) {
+      throw ArgumentError(
+        'HederaClient requires an operator account ID. '
+        'Call client.setOperator() first.',
+      );
+    }
+
+    final now = DateTime.now();
+    final seconds = now.millisecondsSinceEpoch ~/ 1000;
+    final nanos = (now.millisecondsSinceEpoch % 1000) * 1000000;
+
+    final body = hedera_transaction.TransactionBody(
+      transactionID: TransactionID(
+        accountID: operatorId.toProto(),
+        transactionValidStart: Timestamp(
+          seconds: Int64(seconds),
+          nanos: nanos,
+        ),
+      ),
+      nodeAccountID: (nodeAccountId ?? AccountId.fromString('0.0.3')).toProto(),
+      transactionFee: Int64(maxTransactionFee.toTinybars()),
+      transactionValidDuration: hedera_duration.Duration(
+        seconds: Int64(validDuration),
+      ),
+      memo: memo,
+    );
+
+    applyToBody(body);
+    return body;
+  }
   // ---- Execution ----
 
   /// Executes this transaction on the Hedera network.
