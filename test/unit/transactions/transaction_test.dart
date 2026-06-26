@@ -2,11 +2,20 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 
 /// Minimal concrete Transaction for testing the base class.
+// class _TestTransaction extends Transaction<_TestTransaction> {
+//   @override
+//   Uint8List toBytes() => Uint8List.fromList([1, 2, 3]);
+// }
 class _TestTransaction extends Transaction<_TestTransaction> {
   @override
   Uint8List toBytes() => Uint8List.fromList([1, 2, 3]);
+
+  /// No-op implementation for testing purposes.
+  @override
+  void applyToBody(hedera_tx.TransactionBody body) {}
 }
 
 void main() {
