@@ -57,7 +57,7 @@ void main() {
         if (!IntegrationTestHelper.hasCredentials) return;
 
         // Step 1: Generate a new ED25519 key pair for the new account.
-        // This key will control the newly created account — whoever holds
+        // This key will control the newly created account - whoever holds
         // this private key can sign transactions on behalf of the account.
         final publicKey = await newAccountKey.derivePublicKey();
 
@@ -85,6 +85,30 @@ void main() {
         expect(response.transactionId.accountId, isNotEmpty);
       },
       timeout: const Timeout(Duration(seconds: 30)),
+    );
+
+    // Temporalmente en el test para debug:
+    test(
+      'getReceipt returns SUCCESS and a new accountId',
+      () async {
+        if (!IntegrationTestHelper.hasCredentials) return;
+
+        final publicKey = await newAccountKey.derivePublicKey();
+
+        final response = await AccountCreateTransaction()
+            .setKey(publicKey)
+            .setInitialBalance(Hbar(1))
+            .setMemo('hedera_flutter_sdk getReceipt test')
+            .execute(client);
+
+        final receipt = await response.getReceipt(client);
+
+        expect(receipt.status, equals('SUCCESS'));
+        expect(receipt.accountId, isNotNull);
+        expect(receipt.accountId, isNotEmpty);
+        expect(receipt.accountId, contains('.'));
+      },
+      timeout: const Timeout(Duration(seconds: 60)),
     );
   });
 }
