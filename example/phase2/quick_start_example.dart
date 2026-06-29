@@ -67,8 +67,8 @@ void main() async {
   print('Nueva cuenta / New account: $newAccountId');
   // new account URL on HashScan
   print(
-      'HashScan: https://hashscan.io/testnet/account/$newAccountId',
-    );
+    'HashScan: https://hashscan.io/testnet/account/$newAccountId',
+  );
 
   // EN: Step 5 - Always close the client when done.
   //     This releases the gRPC channel and network resources.
