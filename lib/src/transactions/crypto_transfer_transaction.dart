@@ -4,7 +4,11 @@ import 'package:fixnum/fixnum.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_transfer.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
+import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
+    as hedera_response;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 
 /// Transfers HBAR between Hedera accounts.
@@ -106,6 +110,58 @@ class CryptoTransferTransaction extends Transaction<CryptoTransferTransaction> {
     );
 
     return Uint8List.fromList(body.writeToBuffer());
+  }
+
+  // ---- Transaction body construction ----
+
+  /// Applies the CryptoTransferTransaction-specific body fields to [body].
+  ///
+  /// Sets the cryptoTransfer field on [body] with the list of HBAR
+  /// transfers. Validates that transfer amounts sum to zero before
+  /// applying.
+  ///
+  /// Throws [ArgumentError] if no transfers have been added or if
+  /// the transfer amounts do not sum to zero.
+  @override
+  void applyToBody(hedera_tx.TransactionBody body) {
+    if (_transfers.isEmpty) {
+      throw ArgumentError(
+        'CryptoTransferTransaction requires at least one transfer. '
+        'Call addHbarTransfer() first.',
+      );
+    }
+
+    final total = _transfers.fold<int>(
+      0,
+      (sum, transfer) => sum + transfer.amount.toTinybars(),
+    );
+
+    if (total != 0) {
+      throw ArgumentError(
+        'CryptoTransferTransaction transfer amounts must sum to zero. '
+        'Got: $total tinybars.',
+      );
+    }
+
+    final accountAmounts = _transfers.map((transfer) {
+      return AccountAmount(
+        accountID: transfer.accountId.toProto(),
+        amount: Int64(transfer.amount.toTinybars()),
+      );
+    }).toList();
+
+    body.cryptoTransfer = CryptoTransferTransactionBody(
+      transfers: TransferList(accountAmounts: accountAmounts),
+    );
+  }
+
+  /// Executes this transaction via the cryptoTransfer gRPC method.
+  @override
+  Future<hedera_response.TransactionResponse> executeGrpc(
+    CryptoServiceClient cryptoClient,
+    hedera_tx.Transaction tx,
+  ) async {
+    return await cryptoClient.cryptoTransfer(tx);
   }
 }
 
