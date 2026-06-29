@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
@@ -14,10 +15,16 @@ import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
     as hedera_duration;
+import 'package:hedera_flutter_sdk/src/proto/query.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/query_header.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/response_code.pbenum.dart';
 import 'package:hedera_flutter_sdk/src/proto/timestamp.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart'
     as hedera_transaction;
 import 'package:hedera_flutter_sdk/src/proto/transaction_contents.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction_get_receipt.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
+    as hedera_response;
 
 /// Base class for all Hedera transactions.
 ///
@@ -49,14 +56,51 @@ abstract class Transaction<T extends Transaction<T>> {
 
   // ---- Fields ----
 
+  /// The node account ID that will process this transaction.
+  /// Defaults to [AccountId] 0.0.3 if not set.
   AccountId? _nodeAccountId;
+
+  /// The account ID that will pay the transaction fees.
+  /// If not set, the operator account from [HederaClient] is used.
+  AccountId? _payerAccountId;
+
+  /// The maximum fee this transaction will pay.
+  /// Defaults to [HederaConstants.defaultMaxTransactionFeeTinybars].
   Hbar _maxTransactionFee;
+
+  /// The transaction memo. Maximum [HederaConstants.maxMemoLength] characters.
   String _memo;
+
+  /// The valid duration in seconds for this transaction.
+  /// Defaults to [HederaConstants.defaultTransactionValidDurationSeconds].
   int _validDuration;
+
+  /// The transaction ID assigned to this transaction.
+  /// If null, a new ID is generated during [execute].
   TransactionId? _transactionId;
+
+  /// The map of public key hex strings to their signatures.
   final Map<String, List<int>> _signatures;
 
   // ---- Setters (fluent API) ----
+
+  /// Sets the account ID that will pay the transaction fees.
+  ///
+  /// If not set, the operator account from [HederaClient] is used
+  /// as the fee payer by default.
+  ///
+  /// Use this when a non-operator account needs to pay its own fees.
+  ///
+  /// Example:
+  /// ```dart
+  /// transaction.setPayerAccountId(
+  ///   AccountId.fromString('0.0.12345'),
+  /// );
+  /// ```
+  T setPayerAccountId(AccountId payerAccountId) {
+    _payerAccountId = payerAccountId;
+    return this as T;
+  }
 
   /// Sets the account ID of the node that will process this transaction.
   ///
@@ -176,6 +220,26 @@ abstract class Transaction<T extends Transaction<T>> {
     return this as T;
   }
 
+  /// Signs this transaction with [privateKey] using the correct
+  /// TransactionBody bytes built for [client].
+  ///
+  /// Use this method when a non-operator account needs to authorize
+  /// the transaction. Unlike [sign], this method ensures the signature
+  /// covers the complete TransactionBody that will be submitted.
+  ///
+  /// Example:
+  /// ```dart
+  /// final tx = await transfer.signWith(alicePrivateKey, client);
+  /// final response = await tx.execute(client);
+  /// ```
+  Future<T> signWith(PrivateKey privateKey, HederaClient client) async {
+    final bodyBytes = _buildBodyBytes(client);
+    final signature = await privateKey.sign(bodyBytes);
+    final publicKey = await privateKey.derivePublicKey();
+    _signatures[publicKey.toHex()] = signature;
+    return this as T;
+  }
+
   /// Adds a signature from an external signer.
   ///
   /// Use when the signing happens outside the SDK.
@@ -232,14 +296,12 @@ abstract class Transaction<T extends Transaction<T>> {
         'Call client.setOperator() first.',
       );
     }
-
     final now = DateTime.now();
     final seconds = now.millisecondsSinceEpoch ~/ 1000;
     final nanos = (now.millisecondsSinceEpoch % 1000) * 1000000;
-
     final body = hedera_transaction.TransactionBody(
       transactionID: TransactionID(
-        accountID: operatorId.toProto(),
+        accountID: (_payerAccountId ?? operatorId).toProto(),
         transactionValidStart: Timestamp(
           seconds: Int64(seconds),
           nanos: nanos,
@@ -252,9 +314,18 @@ abstract class Transaction<T extends Transaction<T>> {
       ),
       memo: memo,
     );
-
     applyToBody(body);
     return body;
+  }
+
+  /// The cached serialized TransactionBody bytes.
+  /// Built once on the first call to [_buildBodyBytes] and reused
+  /// across [signWith] and [execute] to guarantee byte consistency.
+  Uint8List? _builtBodyBytes;
+
+  Uint8List _buildBodyBytes(HederaClient client) {
+    _builtBodyBytes ??= buildBody(client).writeToBuffer();
+    return _builtBodyBytes!;
   }
 
   /// Builds a [SignedTransaction] ready for gRPC submission.
@@ -269,8 +340,7 @@ abstract class Transaction<T extends Transaction<T>> {
   ///
   /// Throws [ArgumentError] if the client has no operator account ID.
   SignedTransaction buildSignedTransaction(HederaClient client) {
-    final body = buildBody(client);
-    final bodyBytes = body.writeToBuffer();
+    final bodyBytes = _buildBodyBytes(client);
 
     final sigPairs = _signatures.entries.map((entry) {
       final pubKeyHex = entry.key;
@@ -309,7 +379,8 @@ abstract class Transaction<T extends Transaction<T>> {
   ///
   /// Throws [HederaStatusException] if the node returns a
   /// non-OK precheck code.
-  Future<void> executeGrpc(
+  /// Returns the [TransactionResponse] Protobuf from the node.
+  Future<hedera_response.TransactionResponse> executeGrpc(
     CryptoServiceClient cryptoClient,
     hedera_transaction.Transaction tx,
   );
@@ -330,23 +401,61 @@ abstract class Transaction<T extends Transaction<T>> {
   ///     .execute(client);
   /// ```
   Future<TransactionResponse> execute(HederaClient client) async {
+    // 1. Build complete TransactionBody
+    final bodyBytes = _buildBodyBytes(client);
+
+    // 2. Sign bodyBytes
     if (!isSigned) {
-      await signWithOperator(client);
+      final operatorKey = client.operatorPrivateKey;
+      if (operatorKey == null) {
+        throw const HederaStatusException(
+          HederaStatusCode.invalidSignature,
+        );
+      }
+      final signature = await operatorKey.sign(bodyBytes);
+      final publicKey = await operatorKey.derivePublicKey();
+      _signatures[publicKey.toHex()] = signature;
     }
 
-    final signedTx = buildSignedTransaction(client);
+    // 3. Build SignedTransaction
+    final sigPairs = _signatures.entries.map((entry) {
+      return SignaturePair(
+        pubKeyPrefix: _hexToBytes(entry.key),
+        ed25519: entry.value,
+      );
+    }).toList();
+
+    final signedTx = SignedTransaction(
+      bodyBytes: bodyBytes,
+      sigMap: SignatureMap(sigPair: sigPairs),
+    );
+
     final grpcTx = hedera_transaction.Transaction(
       signedTransactionBytes: signedTx.writeToBuffer(),
     );
 
-    await executeGrpc(client.cryptoClient, grpcTx);
+    // 4. Execute and check precheck code
+    final grpcResponse = await executeGrpc(client.cryptoClient, grpcTx);
 
-    final now = DateTime.now();
+    final precheckCode = grpcResponse.nodeTransactionPrecheckCode;
+    if (precheckCode != ResponseCodeEnum.OK) {
+      throw HederaStatusException(
+        HederaStatusCode.fromCode(precheckCode.value),
+      );
+    }
+
+    final builtBody =
+        hedera_transaction.TransactionBody.fromBuffer(_builtBodyBytes!);
+
+    final txAccountId = builtBody.transactionID.accountID;
     final txId = _transactionId ??
         TransactionId(
-          accountId: client.operatorAccountId!.toString(),
-          validStartSeconds: now.millisecondsSinceEpoch ~/ 1000,
-          validStartNanos: (now.millisecondsSinceEpoch % 1000) * 1000000,
+          accountId: '${txAccountId.shardNum}.'
+              '${txAccountId.realmNum}.'
+              '${txAccountId.accountNum}',
+          validStartSeconds:
+              builtBody.transactionID.transactionValidStart.seconds.toInt(),
+          validStartNanos: builtBody.transactionID.transactionValidStart.nanos,
         );
 
     return TransactionResponse(transactionId: txId);
@@ -387,11 +496,83 @@ class TransactionResponse {
 
   /// Waits for consensus and returns the transaction receipt.
   ///
-  /// Polls the network until the transaction reaches consensus
-  /// or throws [HederaStatusException] on failure.
-  // TODO(Phase2): Implement receipt polling via gRPC
+  /// Polls the network every 2 seconds until the transaction reaches
+  /// consensus or times out after 30 seconds.
+  ///
+  /// Throws [HederaStatusException] if the transaction fails.
+  /// Throws [TimeoutException] if consensus is not reached in 30 seconds.
   Future<TransactionReceipt> getReceipt(HederaClient client) async {
-    throw UnimplementedError('TransactionResponse.getReceipt; Phase 2');
+    const maxAttempts = 15;
+    const pollInterval = Duration(seconds: 2);
+
+    final parts = transactionId.toString().split('@');
+    final accountParts = parts[0].split('.');
+    final timestampParts = parts[1].split('.');
+
+    final protoTxId = TransactionID(
+      accountID: AccountID(
+        shardNum: Int64(int.parse(accountParts[0])),
+        realmNum: Int64(int.parse(accountParts[1])),
+        accountNum: Int64(int.parse(accountParts[2])),
+      ),
+      transactionValidStart: Timestamp(
+        seconds: Int64(int.parse(timestampParts[0])),
+        nanos: int.parse(timestampParts[1]),
+      ),
+    );
+
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      await Future<void>.delayed(pollInterval);
+
+      final query = Query(
+        transactionGetReceipt: TransactionGetReceiptQuery(
+          header: QueryHeader(),
+          transactionID: protoTxId,
+        ),
+      );
+
+      final response = await client.cryptoClient.getTransactionReceipts(query);
+      final receipt = response.transactionGetReceipt.receipt;
+      final status = receipt.status;
+
+      if (status == ResponseCodeEnum.UNKNOWN || status == ResponseCodeEnum.OK) {
+        continue;
+      }
+
+      final isSuccess =
+          status == ResponseCodeEnum.OK || status == ResponseCodeEnum.SUCCESS;
+
+      if (!isSuccess) {
+        throw HederaStatusException(
+          HederaStatusCode.fromCode(status.value),
+        );
+      }
+
+      final accountId = receipt.hasAccountID()
+          ? AccountId(
+              shardNum: receipt.accountID.shardNum.toInt(),
+              realmNum: receipt.accountID.realmNum.toInt(),
+              accountNum: receipt.accountID.accountNum.toInt(),
+            ).toString()
+          : null;
+
+      final tokenId = receipt.hasTokenID()
+          ? '${receipt.tokenID.shardNum}.'
+              '${receipt.tokenID.realmNum}.'
+              '${receipt.tokenID.tokenNum}'
+          : null;
+
+      return TransactionReceipt(
+        status: status.name,
+        accountId: accountId,
+        tokenId: tokenId,
+      );
+    }
+
+    throw TimeoutException(
+      'getReceipt timed out after ${maxAttempts * 2} seconds. '
+      'Transaction ID: $transactionId',
+    );
   }
 
   /// Returns the full transaction record including fees and transfers.
