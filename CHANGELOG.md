@@ -5,6 +5,116 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.0-dev
+
+Phase 2 complete: gRPC transaction execution, account management, and HBAR transfers verified on Hedera testnet.
+
+### Added
+
+- `Transaction.buildBody(HederaClient)`: builds a complete `TransactionBody`
+  Protobuf with `transactionID` (operator account + nanosecond timestamp),
+  `nodeAccountID` (default `0.0.3`), `transactionFee`, `transactionValidDuration`,
+  and `memo`; calls `applyToBody()` for the transaction-specific fields
+- `Transaction.applyToBody(TransactionBody)`: abstract method implemented by
+  each subclass to set its specific field on the `TransactionBody` Protobuf
+  (`cryptoCreateAccount`, `cryptoTransfer`, etc.)
+- `Transaction.buildSignedTransaction(HederaClient)`: serializes `TransactionBody`
+  to `bodyBytes`, wraps with `SignatureMap` into a `SignedTransaction` Protobuf
+- `Transaction.execute(HederaClient)`: full gRPC execution pipeline:
+  builds and caches `bodyBytes`, signs with operator or custom key,
+  constructs `SignedTransaction` and `Transaction` envelope, submits via gRPC,
+  verifies `nodeTransactionPrecheckCode`, returns `TransactionResponse`
+- `Transaction.signWith(PrivateKey, HederaClient)`: signs the transaction
+  with a non-operator private key using the correct cached `bodyBytes`;
+  use when a non-operator account needs to authorize a transaction
+- `Transaction.setPayerAccountId(AccountId)`: sets the account that pays
+  transaction fees; if not set, the operator account is used by default
+- `Transaction._buildBodyBytes(HederaClient)`: internal cache for serialized
+  `TransactionBody` bytes; guarantees byte consistency across `signWith()`
+  and `execute()` calls
+- `TransactionResponse.getReceipt(HederaClient)`: polls
+  `CryptoService.getTransactionReceipts()` every 2 seconds (up to 15
+  attempts / 30 seconds) until consensus is reached; returns
+  `TransactionReceipt` with `status`, `accountId`, and `tokenId`;
+  throws `HederaStatusException` on non-SUCCESS status;
+  throws `TimeoutException` after 30 seconds
+- `AccountCreateTransaction.applyToBody()`: sets `cryptoCreateAccount`
+  with `autoRenewPeriod = 7,776,000s` (90 days, required by Hedera)
+- `AccountUpdateTransaction.applyToBody()`: sets `cryptoUpdateAccount`
+- `AccountDeleteTransaction.applyToBody()`: sets `cryptoDelete`
+- `CryptoTransferTransaction.applyToBody()`: sets `cryptoTransfer`;
+  validates that transfer amounts sum to zero
+- `Transaction.executeGrpc(CryptoServiceClient, Transaction)`: abstract
+  method returning `TransactionResponse` Protobuf; each subclass routes
+  to the correct `CryptoServiceClient` method
+- `HederaClient.channel`: lazy-initialized `ClientChannel`; insecure on
+  port 50211 for testnet/previewnet, TLS on port 50212 for mainnet
+- `HederaClient.cryptoClient`: returns `CryptoServiceClient` connected
+  to the active network node
+- `HederaClient.close()`: shuts down the gRPC channel and releases resources
+- Integration test infrastructure:
+  - `test/integration/integration_test_helper.dart`: reads operator
+    credentials from `HEDERA_OPERATOR_ID` and `HEDERA_OPERATOR_KEY`
+  - `test/integration/transactions/account_create_transaction_test.dart`:
+    2 tests verified on Hedera testnet (account `0.0.9358959` created)
+  - `test/integration/transactions/account_setup_test.dart`: utility test
+    to create funded testnet accounts and print credentials
+  - `test/integration/transactions/crypto_transfer_transaction_test.dart`:
+    operator-signed HBAR transfers with `getReceipt()` SUCCESS
+  - `test/integration/transactions/crypto_transfer_sign_test.dart`:
+    non-operator signing via `signWith()` and `setPayerAccountId()`;
+    reads Alice credentials from `HEDERA_ALICE_ID` and `HEDERA_ALICE_KEY`
+- New examples:
+  - `example/phase2/quick_start_example.dart`: simplest flow with
+    bilingual comments (EN/ES)
+  - `example/phase2/account_lifecycle_example.dart`: complete end-to-end
+    flow - create Alice, create Bob, Alice transfers HBAR to Bob using
+    her own key and paying her own fees; bilingual comments (EN/ES)
+  - `example/phase2/hedera_service_example.dart`: `HederaService` pattern
+    for Flutter apps with `init()` and `dispose()` lifecycle; bilingual
+    comments (EN/ES)
+- 45 new unit tests (363/363 -> 407/407 total passing)
+
+### Changed
+
+- `Transaction.execute()`: refactored to sign `bodyBytes` (complete
+  `TransactionBody`) instead of `toBytes()` (specific body only);
+  fixes `INVALID_SIGNATURE` on Hedera nodes
+- `HederaClient.channel`: switched from TLS to insecure for testnet and
+  previewnet to avoid certificate verification issues in development
+- `example/hedera_flutter_sdk_example.dart`: updated with GETTING STARTED,
+  QUICK START, and PHASE OVERVIEW sections; documents Windows/macOS/Linux
+  environment variable setup
+
+### Fixed
+
+- `INVALID_RENEWAL_PERIOD`: added `autoRenewPeriod` to
+  `AccountCreateTransaction.applyToBody()`
+- `INVALID_SIGNATURE`: signing now uses cached `bodyBytes` from
+  `_buildBodyBytes()` ensuring the signed bytes match exactly what
+  the node receives in `SignedTransaction`
+- `TransactionId` in `TransactionResponse`: now extracted from the built
+  `TransactionBody` instead of `DateTime.now()`, ensuring correct
+  timestamp for `getReceipt()` polling
+
+### Verified on Hedera Testnet
+
+- Operator account: `0.0.9186292` (ED25519, testnet)
+- Accounts created: `0.0.9358959`, `0.0.9365895`, `0.0.9367078`,
+  `0.0.9367079` (visible on HashScan)
+- HBAR transfers: operator to receiver and Alice to Bob (non-operator
+  signing with custom fee payer)
+- All transactions visible at:
+  `https://hashscan.io/testnet/account/0.0.9186292/operations`
+
+### Status
+
+Phase 2 complete: full gRPC execution pipeline working end-to-end on
+Hedera testnet. Account creation, HBAR transfers, receipt polling,
+non-operator signing, and custom fee payers all verified.  
+Not ready for production use.  
+Next: Hedera Token Service (HTS) - Phase 3.
+
 ## 0.0.9-dev
 
 Phase 2 in progress: HBAR transfers and EVM address compatibility.
