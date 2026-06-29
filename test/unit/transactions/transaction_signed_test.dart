@@ -5,6 +5,8 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/proto/transaction_contents.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
+    as hedera_response;
 
 /// Minimal concrete Transaction for testing buildSignedTransaction().
 class _TestTransaction extends Transaction<_TestTransaction> {
@@ -17,10 +19,12 @@ class _TestTransaction extends Transaction<_TestTransaction> {
 
   /// No-op implementation for testing purposes.
   @override
-  Future<void> executeGrpc(
+  Future<hedera_response.TransactionResponse> executeGrpc(
     CryptoServiceClient cryptoClient,
     hedera_tx.Transaction tx,
-  ) async {}
+  ) async {
+    return hedera_response.TransactionResponse();
+  }
 }
 
 void main() {

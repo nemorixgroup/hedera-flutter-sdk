@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
+import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
+    as hedera_response;
 
 /// Minimal concrete Transaction for testing the base class.
 // class _TestTransaction extends Transaction<_TestTransaction> {
@@ -20,10 +22,12 @@ class _TestTransaction extends Transaction<_TestTransaction> {
 
   /// No-op implementation for testing purposes.
   @override
-  Future<void> executeGrpc(
+  Future<hedera_response.TransactionResponse> executeGrpc(
     CryptoServiceClient cryptoClient,
     hedera_tx.Transaction tx,
-  ) async {}
+  ) async {
+    return hedera_response.TransactionResponse();
+  }
 }
 
 void main() {
@@ -197,7 +201,7 @@ void main() {
     // ---- signWithOperator ----
 
     group('signWithOperator', () {
-      test('throws HederaStatusException if no operator set', () async {
+      test('execute throws ArgumentError if client has no operator', () async {
         final tx = _TestTransaction();
         final client = HederaClient.forTestnet();
         expect(
@@ -226,7 +230,7 @@ void main() {
         final client = HederaClient.forTestnet();
         expect(
           () => tx.execute(client),
-          throwsA(isA<HederaStatusException>()),
+          throwsA(isA<ArgumentError>()),
         );
       });
     });
@@ -254,14 +258,11 @@ void main() {
       expect(response.toString(), contains('0.0.12345'));
     });
 
-    test('getReceipt throws UnimplementedError', () async {
+    test('getReceipt returns a Future', () {
       final txId = TransactionId.fromString('0.0.12345@1706745600.0');
       final response = TransactionResponse(transactionId: txId);
       final client = HederaClient.forTestnet();
-      expect(
-        () => response.getReceipt(client),
-        throwsA(isA<UnimplementedError>()),
-      );
+      expect(response.getReceipt(client), isA<Future<TransactionReceipt>>());
     });
 
     test('getRecord throws UnimplementedError', () async {
