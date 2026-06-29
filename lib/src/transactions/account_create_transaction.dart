@@ -6,7 +6,11 @@ import 'package:hedera_flutter_sdk/src/models/hbar.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_create.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
+import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
+    as hedera_duration;
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
+import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
+    as hedera_response;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 
 /// Creates a new Hedera account.
@@ -157,6 +161,9 @@ class AccountCreateTransaction extends Transaction<AccountCreateTransaction> {
       initialBalance: Int64(_initialBalance.toTinybars()),
       memo: memo,
       receiverSigRequired: _receiverSigRequired,
+      autoRenewPeriod: hedera_duration.Duration(
+        seconds: Int64(7776000), // 90 days
+      ),
     );
 
     if (_maxAutomaticTokenAssociations != null) {
@@ -169,10 +176,10 @@ class AccountCreateTransaction extends Transaction<AccountCreateTransaction> {
 
   /// Executes this transaction via the createAccount gRPC method.
   @override
-  Future<void> executeGrpc(
+  Future<hedera_response.TransactionResponse> executeGrpc(
     CryptoServiceClient cryptoClient,
     hedera_tx.Transaction tx,
   ) async {
-    await cryptoClient.createAccount(tx);
+    return await cryptoClient.createAccount(tx);
   }
 }

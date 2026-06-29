@@ -7,6 +7,8 @@ import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_transfer.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
+import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
+    as hedera_response;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 
 /// Transfers HBAR between Hedera accounts.
@@ -155,11 +157,11 @@ class CryptoTransferTransaction extends Transaction<CryptoTransferTransaction> {
 
   /// Executes this transaction via the cryptoTransfer gRPC method.
   @override
-  Future<void> executeGrpc(
+  Future<hedera_response.TransactionResponse> executeGrpc(
     CryptoServiceClient cryptoClient,
     hedera_tx.Transaction tx,
   ) async {
-    await cryptoClient.cryptoTransfer(tx);
+    return await cryptoClient.cryptoTransfer(tx);
   }
 }
 

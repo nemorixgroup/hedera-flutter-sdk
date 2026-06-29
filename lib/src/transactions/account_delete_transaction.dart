@@ -6,6 +6,8 @@ import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_delete.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
+import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
+    as hedera_response;
 import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 
 /// Deletes an existing Hedera account.
@@ -138,10 +140,10 @@ class AccountDeleteTransaction extends Transaction<AccountDeleteTransaction> {
 
   /// Executes this transaction via the cryptoDelete gRPC method.
   @override
-  Future<void> executeGrpc(
+  Future<hedera_response.TransactionResponse> executeGrpc(
     CryptoServiceClient cryptoClient,
     hedera_tx.Transaction tx,
   ) async {
-    await cryptoClient.cryptoDelete(tx);
+    return await cryptoClient.cryptoDelete(tx);
   }
 }
