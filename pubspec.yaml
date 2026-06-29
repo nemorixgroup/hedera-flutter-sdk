@@ -3,7 +3,7 @@ description: >
   The first native Flutter/Dart SDK for the Hedera network.
   Pure Dart, no platform channels. Supports HBAR, HTS, HCS,
   and Mirror Node. Built for mobile and desktop.
-version: 0.0.9-dev
+version: 0.1.0-dev
 repository: https://github.com/nemorixgroup/hedera-flutter-sdk
 homepage: https://nemorixpay.com
 issue_tracker: https://github.com/nemorixgroup/hedera-flutter-sdk/issues

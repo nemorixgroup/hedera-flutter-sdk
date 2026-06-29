@@ -6,7 +6,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg)](https://flutter.dev)
 [![Status](https://img.shields.io/badge/Status-Phase%202%20In%20Progress-blue.svg)]()
 
-**The first native Flutter/Dart SDK for the [Hedera](https://hedera.com) network.**
+**The first native Flutter/Dart SDK for the [Hedera](https://hedera.com) network.**  
 Pure Dart · No platform channels · Apache 2.0
 
 ## Status
@@ -34,7 +34,7 @@ This project closes that gap.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.0.9-dev
+  hedera_flutter_sdk: ^0.1.0-dev
 ```
 
 ## Quick Guide
@@ -155,7 +155,7 @@ final isValid = await publicKey.verify(
 print(isValid); // true
 ```
 
-## Current Features (v0.0.9-dev)
+## Current Features (v0.1.0-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -179,11 +179,11 @@ print(isValid); // true
 - Account queries: `AccountBalanceQuery`, `AccountInfoQuery` with
   `AccountInfo` model
 - EVM address alias support
+- gRPC execution: `execute()` via `HederaClient` for transactions and queries
+- `TransactionResponse`: `getReceipt()` and `getRecord()` via gRPC polling
 
 ## Planned Features
 
-- gRPC execution: `execute()` via `HederaClient` for transactions and queries
-- `TransactionResponse`: `getReceipt()` and `getRecord()` via gRPC polling
 - Multi-signature: `KeyList` with M-of-N threshold
 - Hedera Token Service (HTS): fungible tokens, NFTs, native KYC
 - Mirror Node REST client with real-time WebSocket subscriptions
@@ -218,7 +218,7 @@ Este SDK esta siendo desarrollado con soporte nativo para la region:
 - Desarrollado por [Nemorix Group](https://nemorixpay.com); Ohio, USA
 
 Siguenos para actualizaciones:
-**hedera@nemorixpay.com**
+**sdks@nemorixpay.com**
 
 ## Support This Project
 
