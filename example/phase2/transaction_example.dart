@@ -3,11 +3,12 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 // ---- Phase 2: Transactions ----
 
 /// Demonstrates all Phase 2 transactions: AccountCreateTransaction,
-/// AccountUpdateTransaction, AccountDeleteTransaction, and
-/// CryptoTransferTransaction.
+/// AccountUpdateTransaction, AccountDeleteTransaction,
+/// CryptoTransferTransaction, and TransactionGetReceiptQuery.
 ///
-/// Note: execute() via gRPC is pending implementation.
-/// This example shows the complete flow up to network submission.
+/// Note: Steps that require a funded testnet account (execute via gRPC)
+/// are shown as code previews. Run account_lifecycle_example.dart for
+/// a fully executable end-to-end example.
 Future<void> transactionExamples() async {
   print('=== Transactions (Phase 2) ===\n');
 
@@ -15,7 +16,7 @@ Future<void> transactionExamples() async {
 
   print('--- AccountCreateTransaction ---\n');
 
-  // 1. Generate wallet from Spanish mnemonic (LATAM use case)
+  // Step 1: Generate wallet from Spanish mnemonic (LATAM use case)
   print('Step 1: Generate wallet from Spanish mnemonic');
   final mnemonic = await Mnemonic.generate24(
     language: MnemonicLanguage.spanish,
@@ -24,21 +25,21 @@ Future<void> transactionExamples() async {
   print('Valid: ${mnemonic.validate()}');
   print('');
 
-  // 2. Derive private key from mnemonic
+  // Step 2: Derive private key from mnemonic
   print('Step 2: Derive private key from mnemonic');
   final privateKey = await mnemonic.toPrivateKey();
   print('Private key type: ${privateKey.type.name}');
   print('Private key (safe): $privateKey');
   print('');
 
-  // 3. Derive public key from private key
+  // Step 3: Derive public key from private key
   print('Step 3: Derive public key');
   final publicKey = await privateKey.derivePublicKey();
   print('Public key (DER): ${publicKey.toDerString()}');
   print('Public key bytes: ${publicKey.bytes.length} bytes');
   print('');
 
-  // 4. Build AccountCreateTransaction
+  // Step 4: Build AccountCreateTransaction
   print('Step 4: Build AccountCreateTransaction');
   final createTx = AccountCreateTransaction()
       .setKey(publicKey)
@@ -52,7 +53,7 @@ Future<void> transactionExamples() async {
   print('Max token associations: ${createTx.maxAutomaticTokenAssociations}');
   print('');
 
-  // 5. Serialize and sign
+  // Step 5: Serialize and sign
   print('Step 5: Serialize and sign');
   final createBytes = createTx.toBytes();
   print('Serialized bytes: ${createBytes.length} bytes');
@@ -61,18 +62,21 @@ Future<void> transactionExamples() async {
   print('Signature count: ${createTx.signatureCount}');
   print('');
 
-  // 6. Execute (pending gRPC)
-  print('Step 6: Execute (pending gRPC)');
-  print('When ready: final response = await createTx.execute(client);');
-  print('Then:       final receipt = await response.getReceipt(client);');
-  print('Result:     receipt.accountId -> 0.0.XXXXXX');
+  // Step 6: Execute via gRPC (requires funded testnet operator)
+  print('Step 6: Execute via gRPC');
+  print('  final client = HederaClient.forTestnet()');
+  print('      .setOperator(operatorId, operatorKey);');
+  print('  final response = await createTx.execute(client);');
+  print('  final receipt = await response.getReceipt(client);');
+  print('  print(receipt.accountId); // 0.0.XXXXXX');
+  print('  See: example/phase2/account_lifecycle_example.dart');
   print('');
 
   // ---- AccountUpdateTransaction ----
 
   print('--- AccountUpdateTransaction ---\n');
 
-  // 7. Build AccountUpdateTransaction (only set fields that change)
+  // Step 7: Build AccountUpdateTransaction (only set fields that change)
   print('Step 7: Build AccountUpdateTransaction');
   final accountId = AccountId.fromString('0.0.12345');
   final updateTx = AccountUpdateTransaction()
@@ -87,7 +91,7 @@ Future<void> transactionExamples() async {
   );
   print('');
 
-  // 8. Serialize and sign
+  // Step 8: Serialize and sign
   print('Step 8: Serialize and sign');
   final updateBytes = updateTx.toBytes();
   print('Serialized bytes: ${updateBytes.length} bytes');
@@ -95,16 +99,18 @@ Future<void> transactionExamples() async {
   print('Is signed: ${updateTx.isSigned}');
   print('');
 
-  // 9. Execute (pending gRPC)
-  print('Step 9: Execute (pending gRPC)');
-  print('When ready: final response = await updateTx.execute(client);');
+  // Step 9: Execute via gRPC (requires funded testnet operator)
+  print('Step 9: Execute via gRPC');
+  print('  final response = await updateTx.execute(client);');
+  print('  final receipt = await response.getReceipt(client);');
+  print('  print(receipt.status); // SUCCESS');
   print('');
 
   // ---- AccountDeleteTransaction ----
 
   print('--- AccountDeleteTransaction ---\n');
 
-  // 10. Build AccountDeleteTransaction
+  // Step 10: Build AccountDeleteTransaction
   print('Step 10: Build AccountDeleteTransaction');
   final transferAccountId = AccountId.fromString('0.0.99');
   final deleteTx = AccountDeleteTransaction()
@@ -116,7 +122,7 @@ Future<void> transactionExamples() async {
   print('Transfer remaining HBAR to: ${deleteTx.transferAccountId}');
   print('');
 
-  // 11. Serialize and sign
+  // Step 11: Serialize and sign
   print('Step 11: Serialize and sign');
   final deleteBytes = deleteTx.toBytes();
   print('Serialized bytes: ${deleteBytes.length} bytes');
@@ -124,16 +130,18 @@ Future<void> transactionExamples() async {
   print('Is signed: ${deleteTx.isSigned}');
   print('');
 
-  // 12. Execute (pending gRPC)
-  print('Step 12: Execute (pending gRPC)');
-  print('When ready: final response = await deleteTx.execute(client);');
+  // Step 12: Execute via gRPC (requires funded testnet operator)
+  print('Step 12: Execute via gRPC');
+  print('  final response = await deleteTx.execute(client);');
+  print('  final receipt = await response.getReceipt(client);');
+  print('  print(receipt.status); // SUCCESS');
   print('');
 
   // ---- CryptoTransferTransaction ----
 
   print('--- CryptoTransferTransaction ---\n');
 
-  // 13. Build CryptoTransferTransaction (sum must be zero)
+  // Step 13: Build CryptoTransferTransaction (sum must be zero)
   print('Step 13: Build CryptoTransferTransaction');
   final senderAccount = AccountId.fromString('0.0.111');
   final receiverAccount = AccountId.fromString('0.0.222');
@@ -148,7 +156,7 @@ Future<void> transactionExamples() async {
   print('Transfer sum is zero: true');
   print('');
 
-  // 14. Serialize and sign
+  // Step 14: Serialize and sign
   print('Step 14: Serialize and sign');
   final transferBytes = transferTx.toBytes();
   print('Serialized bytes: ${transferBytes.length} bytes');
@@ -156,19 +164,80 @@ Future<void> transactionExamples() async {
   print('Is signed: ${transferTx.isSigned}');
   print('');
 
-  // 15. Connect to testnet
+  // Step 15: Connect to testnet
   print('Step 15: Connect to Hedera testnet');
   final client = HederaClient.forTestnet();
   print('Network: ${client.network.name}');
   print('Endpoint: ${client.networkEndpoint}');
   print('');
 
-  // 16. Execute (pending gRPC)
-  print('Step 16: Execute (pending gRPC)');
-  print('When ready: final response = await transferTx.execute(client);');
-  print('Then:       final receipt = await response.getReceipt(client);');
-  print('Result:     receipt.status -> SUCCESS');
+  // Step 16: Execute via gRPC (requires funded testnet operator)
+  // Scenario 1: Operator is the sender (auto-signs with operator key)
+  print('Step 16: Execute via gRPC - Scenario 1 (operator as sender)');
+  print('  final response = await CryptoTransferTransaction()');
+  print('      .addHbarTransfer(operatorId, Hbar(-1))');
+  print('      .addHbarTransfer(receiverId, Hbar(1))');
+  print('      .execute(client); // operator signs automatically');
+  print('  final receipt = await response.getReceipt(client);');
+  print('  print(receipt.status); // SUCCESS');
   print('');
+
+  // Scenario 2: Non-operator sender (signs with own key, pays own fees)
+  print('Step 17: Execute via gRPC - Scenario 2 (non-operator sender)');
+  print('  final tx = await CryptoTransferTransaction()');
+  print('      .addHbarTransfer(aliceId, Hbar(-1))');
+  print('      .addHbarTransfer(bobId, Hbar(1))');
+  print('      .setPayerAccountId(aliceId) // Alice pays fees');
+  print('      .signWith(alicePrivateKey, client); // Alice signs');
+  print('  final response = await tx.execute(client);');
+  print('  final receipt = await response.getReceipt(client);');
+  print('  print(receipt.status); // SUCCESS');
+  print('  See: example/phase2/account_lifecycle_example.dart');
+  print('');
+
+  // ---- TransactionGetReceiptQuery ----
+
+  print('--- TransactionGetReceiptQuery ---\n');
+
+  // Step 18: Query receipt by transaction ID directly
+  // Use this when you have a transactionId from an external source
+  // (e.g. stored in a database or received from another service)
+  // and want to poll for its status without calling execute() yourself.
+  print('Step 18: Query receipt by transaction ID');
+  final txId = TransactionId.fromString(
+    '0.0.9186292@1782678851.459000000',
+  );
+
+  final receiptQuery = TransactionGetReceiptQuery().setTransactionId(txId);
+
+  print('Transaction ID: ${receiptQuery.transactionId}');
+  print('Query bytes: ${receiptQuery.toBytes().length} bytes');
+  print('');
+
+  // Step 19: Execute the receipt query
+  // Polls every 2 seconds up to 30 seconds until SUCCESS or error.
+  print('Step 19: Execute receipt query (requires testnet connection)');
+  print('  final receipt = await TransactionGetReceiptQuery()');
+  print('      .setTransactionId(response.transactionId)');
+  print('      .execute(client);');
+  print('  print(receipt.status);    // SUCCESS');
+  print('  print(receipt.accountId); // 0.0.XXXXXX (if AccountCreateTx)');
+  print('  print(receipt.tokenId);   // 0.0.XXXXXX (if TokenCreateTx)');
+  print('');
+
+  // Step 20: Difference between getReceipt() and TransactionGetReceiptQuery
+  print('Step 20: getReceipt() vs TransactionGetReceiptQuery');
+  print('  // Option A - via TransactionResponse (most common):');
+  print('  final response = await tx.execute(client);');
+  print('  final receipt = await response.getReceipt(client);');
+  print('');
+  print('  // Option B - via TransactionGetReceiptQuery (external TX):');
+  print('  final receipt = await TransactionGetReceiptQuery()');
+  print('      .setTransactionId(knownTxId)');
+  print('      .execute(client);');
+  print('');
+
+  await client.close();
 
   print('=== Transaction examples complete ===\n');
 }
