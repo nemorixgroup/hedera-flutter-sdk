@@ -611,13 +611,22 @@ class TransactionReceipt {
 
 /// The full record of a completed Hedera transaction.
 ///
-/// Contains fees; transfers; and other details.
+/// Contains the transaction fee, consensus timestamp, memo,
+/// transfer list, and the receipt with the final status.
+///
+/// Obtain via TransactionResponse.getRecord or
+/// TransactionGetRecordQuery.execute.
 class TransactionRecord {
   /// Creates a [TransactionRecord] with the given fields.
   const TransactionRecord({
     required this.transactionId,
     required this.transactionFee,
     required this.memo,
+    required this.consensusTimestamp,
+    required this.status,
+    this.accountId,
+    this.tokenId,
+    this.transfers = const [],
   });
 
   /// The transaction ID.
@@ -629,7 +638,23 @@ class TransactionRecord {
   /// The transaction memo.
   final String memo;
 
+  /// The consensus timestamp in UTC.
+  final DateTime consensusTimestamp;
+
+  /// The final status of the transaction (e.g. SUCCESS).
+  final String status;
+
+  /// The account ID created by an AccountCreateTransaction; if applicable.
+  final String? accountId;
+
+  /// The token ID created by a TokenCreateTransaction; if applicable.
+  final String? tokenId;
+
+  /// The list of HBAR transfers executed by this transaction.
+  /// Each entry is a map with 'accountId' and 'amount' (in tinybars).
+  final List<Map<String, dynamic>> transfers;
+
   @override
   String toString() => 'TransactionRecord(transactionId: $transactionId; '
-      'fee: $transactionFee tinybars)';
+      'fee: $transactionFee tinybars; status: $status)';
 }
