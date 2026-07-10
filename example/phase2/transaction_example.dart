@@ -240,4 +240,50 @@ Future<void> transactionExamples() async {
   await client.close();
 
   print('=== Transaction examples complete ===\n');
+
+  // ---- TransactionGetRecordQuery ----
+
+  print('--- TransactionGetRecordQuery ---\n');
+
+  // Step 21: Query record by transaction ID directly
+  // A record contains more information than a receipt:
+  // - exact fee charged in tinybars
+  // - consensus timestamp in UTC
+  // - full HBAR transfer list
+  // - receipt status
+  // Available for up to 180 seconds after consensus.
+  print('Step 21: Build TransactionGetRecordQuery');
+  final recordQuery = TransactionGetRecordQuery().setTransactionId(txId);
+
+  print('Transaction ID: ${recordQuery.transactionId}');
+  print('Query bytes: ${recordQuery.toBytes().length} bytes');
+  print('');
+
+  // Step 22: Execute the record query
+  print('Step 22: Execute record query (requires testnet connection)');
+  print('  final record = await TransactionGetRecordQuery()');
+  print('      .setTransactionId(response.transactionId)');
+  print('      .execute(client);');
+  print('  print(record.status);             // SUCCESS');
+  print('  print(record.transactionFee);     // fee in tinybars');
+  print('  print(record.consensusTimestamp); // DateTime in UTC');
+  print('  print(record.transfers);          // HBAR transfer list');
+  print(
+    '  print(record.accountId);    // 0.0.XXXXXX (if AccountCreateTx)',
+  );
+  print('');
+
+  // Step 23: Difference between receipt and record
+  print('Step 23: Receipt vs Record');
+  print('  // Receipt - fast, available immediately after consensus:');
+  print('  final receipt = await response.getReceipt(client);');
+  print('  print(receipt.status);    // SUCCESS');
+  print('  print(receipt.accountId); // 0.0.XXXXXX');
+  print('');
+  print('  // Record - more data, available up to 180s after consensus:');
+  print('  final record = await response.getRecord(client);');
+  print('  print(record.transactionFee);     // exact fee in tinybars');
+  print('  print(record.consensusTimestamp); // exact consensus time');
+  print('  print(record.transfers);          // full transfer list');
+  print('');
 }
