@@ -307,10 +307,14 @@ void main() {
         transactionId: txId,
         transactionFee: 100000,
         memo: 'test',
+        consensusTimestamp: DateTime.utc(2024),
+        status: 'SUCCESS',
       );
       expect(record.transactionId, equals(txId));
       expect(record.transactionFee, equals(100000));
       expect(record.memo, equals('test'));
+      expect(record.consensusTimestamp, equals(DateTime.utc(2024)));
+      expect(record.status, equals('SUCCESS'));
     });
 
     test('toString includes transactionId and fee', () {
@@ -319,9 +323,12 @@ void main() {
         transactionId: txId,
         transactionFee: 100000,
         memo: 'test',
+        consensusTimestamp: DateTime.utc(2024),
+        status: 'SUCCESS',
       );
       expect(record.toString(), contains('0.0.12345'));
       expect(record.toString(), contains('100000'));
+      expect(record.toString(), contains('SUCCESS'));
     });
   });
 }
