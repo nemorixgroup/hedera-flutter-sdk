@@ -31,10 +31,10 @@ import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 /// print(receipt.status); // SUCCESS
 /// print(receipt.accountId); // 0.0.12345
 /// ```
-class TransactionGetReceiptQuery
-    extends hedera_query.Query<TransactionReceipt, TransactionGetReceiptQuery> {
-  /// Creates a new [TransactionGetReceiptQuery] with default values.
-  TransactionGetReceiptQuery();
+class TransactionReceiptQuery
+    extends hedera_query.Query<TransactionReceipt, TransactionReceiptQuery> {
+  /// Creates a new [TransactionReceiptQuery] with default values.
+  TransactionReceiptQuery();
 
   TransactionId? _transactionId;
 
@@ -48,7 +48,7 @@ class TransactionGetReceiptQuery
   /// ```dart
   /// query.setTransactionId(response.transactionId);
   /// ```
-  TransactionGetReceiptQuery setTransactionId(TransactionId transactionId) {
+  TransactionReceiptQuery setTransactionId(TransactionId transactionId) {
     _transactionId = transactionId;
     return this;
   }

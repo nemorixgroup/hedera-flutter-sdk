@@ -208,7 +208,7 @@ Future<void> transactionExamples() async {
     '0.0.9186292@1782678851.459000000',
   );
 
-  final receiptQuery = TransactionGetReceiptQuery().setTransactionId(txId);
+  final receiptQuery = TransactionReceiptQuery().setTransactionId(txId);
 
   print('Transaction ID: ${receiptQuery.transactionId}');
   print('Query bytes: ${receiptQuery.toBytes().length} bytes');
@@ -253,7 +253,7 @@ Future<void> transactionExamples() async {
   // - receipt status
   // Available for up to 180 seconds after consensus.
   print('Step 21: Build TransactionGetRecordQuery');
-  final recordQuery = TransactionGetRecordQuery().setTransactionId(txId);
+  final recordQuery = TransactionRecordQuery().setTransactionId(txId);
 
   print('Transaction ID: ${recordQuery.transactionId}');
   print('Query bytes: ${recordQuery.toBytes().length} bytes');

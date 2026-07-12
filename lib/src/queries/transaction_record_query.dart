@@ -37,10 +37,10 @@ import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 /// print(record.consensusTimestamp); // DateTime in UTC
 /// print(record.transfers);          // list of HBAR transfers
 /// ```
-class TransactionGetRecordQuery
-    extends hedera_query.Query<TransactionRecord, TransactionGetRecordQuery> {
-  /// Creates a new [TransactionGetRecordQuery] with default values.
-  TransactionGetRecordQuery();
+class TransactionRecordQuery
+    extends hedera_query.Query<TransactionRecord, TransactionRecordQuery> {
+  /// Creates a new [TransactionRecordQuery] with default values.
+  TransactionRecordQuery();
 
   TransactionId? _transactionId;
 
@@ -54,7 +54,7 @@ class TransactionGetRecordQuery
   /// ```dart
   /// query.setTransactionId(response.transactionId);
   /// ```
-  TransactionGetRecordQuery setTransactionId(TransactionId transactionId) {
+  TransactionRecordQuery setTransactionId(TransactionId transactionId) {
     _transactionId = transactionId;
     return this;
   }
