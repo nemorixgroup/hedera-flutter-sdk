@@ -23,6 +23,8 @@ import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart'
     as hedera_transaction;
 import 'package:hedera_flutter_sdk/src/proto/transaction_contents.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction_get_receipt.pb.dart';
+import 'package:hedera_flutter_sdk/src/proto/transaction_get_record.pb.dart'
+    as hedera_get_record;
 import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
     as hedera_response;
 
@@ -576,9 +578,128 @@ class TransactionResponse {
   }
 
   /// Returns the full transaction record including fees and transfers.
-  // TODO(Phase2): Implement record retrieval via gRPC
+  ///
+  /// Polls the network every 2 seconds until the record is available
+  /// or times out after 30 seconds.
+  ///
+  /// A record contains more detail than a receipt:
+  /// exact fee charged, consensus timestamp, full transfer list.
+  ///
+  /// Records are available for up to 180 seconds after consensus.
+  ///
+  /// Throws [HederaStatusException] if the transaction failed.
+  /// Throws [TimeoutException] if the record is not available in 30 seconds.
   Future<TransactionRecord> getRecord(HederaClient client) async {
-    throw UnimplementedError('TransactionResponse.getRecord; Phase 2');
+    const maxAttempts = 15;
+    const pollInterval = Duration(seconds: 2);
+
+    final parts = transactionId.toString().split('@');
+    final accountParts = parts[0].split('.');
+    final timestampParts = parts[1].split('.');
+
+    final protoTxId = TransactionID(
+      accountID: AccountID(
+        shardNum: Int64(int.parse(accountParts[0])),
+        realmNum: Int64(int.parse(accountParts[1])),
+        accountNum: Int64(int.parse(accountParts[2])),
+      ),
+      transactionValidStart: Timestamp(
+        seconds: Int64(int.parse(timestampParts[0])),
+        nanos: int.parse(timestampParts[1]),
+      ),
+    );
+
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
+      await Future<void>.delayed(pollInterval);
+
+      final query = Query(
+        transactionGetRecord: hedera_get_record.TransactionGetRecordQuery(
+          header: QueryHeader(),
+          transactionID: protoTxId,
+        ),
+      );
+
+      final response = await client.cryptoClient.getTxRecordByTxID(query);
+      final recordResponse = response.transactionGetRecord;
+      final precheckCode = recordResponse.header.nodeTransactionPrecheckCode;
+
+      if (precheckCode == ResponseCodeEnum.UNKNOWN ||
+          precheckCode == ResponseCodeEnum.OK) {
+        continue;
+      }
+
+      if (precheckCode != ResponseCodeEnum.OK &&
+          precheckCode != ResponseCodeEnum.SUCCESS) {
+        throw HederaStatusException(
+          HederaStatusCode.fromCode(precheckCode.value),
+        );
+      }
+
+      final record = recordResponse.transactionRecord;
+      final status = record.receipt.status;
+
+      if (status != ResponseCodeEnum.SUCCESS && status != ResponseCodeEnum.OK) {
+        throw HederaStatusException(
+          HederaStatusCode.fromCode(status.value),
+        );
+      }
+
+      final consensusTimestamp = DateTime.fromMillisecondsSinceEpoch(
+        record.consensusTimestamp.seconds.toInt() * 1000 +
+            record.consensusTimestamp.nanos ~/ 1000000,
+        isUtc: true,
+      );
+
+      final txAccountId = record.transactionID.accountID;
+      final txId = TransactionId(
+        accountId: '${txAccountId.shardNum}.'
+            '${txAccountId.realmNum}.'
+            '${txAccountId.accountNum}',
+        validStartSeconds:
+            record.transactionID.transactionValidStart.seconds.toInt(),
+        validStartNanos: record.transactionID.transactionValidStart.nanos,
+      );
+
+      final transfers = record.transferList.accountAmounts.map((amount) {
+        final accountId = '${amount.accountID.shardNum}.'
+            '${amount.accountID.realmNum}.'
+            '${amount.accountID.accountNum}';
+        return <String, dynamic>{
+          'accountId': accountId,
+          'amount': amount.amount.toInt(),
+        };
+      }).toList();
+
+      final accountId = record.receipt.hasAccountID()
+          ? AccountId(
+              shardNum: record.receipt.accountID.shardNum.toInt(),
+              realmNum: record.receipt.accountID.realmNum.toInt(),
+              accountNum: record.receipt.accountID.accountNum.toInt(),
+            ).toString()
+          : null;
+
+      final tokenId = record.receipt.hasTokenID()
+          ? '${record.receipt.tokenID.shardNum}.'
+              '${record.receipt.tokenID.realmNum}.'
+              '${record.receipt.tokenID.tokenNum}'
+          : null;
+
+      return TransactionRecord(
+        transactionId: txId,
+        transactionFee: record.transactionFee.toInt(),
+        memo: record.memo,
+        consensusTimestamp: consensusTimestamp,
+        status: status.name,
+        accountId: accountId,
+        tokenId: tokenId,
+        transfers: transfers,
+      );
+    }
+
+    throw TimeoutException(
+      'getRecord timed out after ${maxAttempts * 2} seconds. '
+      'Transaction ID: $transactionId',
+    );
   }
 
   @override
