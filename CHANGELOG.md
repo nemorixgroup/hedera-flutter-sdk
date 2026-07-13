@@ -5,6 +5,54 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.1-dev
+
+Transaction query completeness: public receipt and record query classes.
+
+### Added
+
+- `TransactionReceiptQuery`: public query class to poll the receipt of
+  any Hedera transaction by ID, including transactions not executed
+  by the caller
+  - `setTransactionId(TransactionId)`: sets the transaction ID to query
+  - `toBytes()`: serializes to `TransactionGetReceiptQuery` Protobuf
+  - `execute(HederaClient)`: polls every 2 seconds until SUCCESS or
+    timeout (30 seconds); returns `TransactionReceipt` with `status`,
+    `accountId`, and `tokenId`
+- `TransactionRecordQuery`: public query class to retrieve the full
+  record of a completed Hedera transaction
+  - `setTransactionId(TransactionId)`: sets the transaction ID to query
+  - `toBytes()`: serializes to `TransactionGetRecordQuery` Protobuf
+  - `execute(HederaClient)`: polls `getTxRecordByTxID()` every 2 seconds
+    until the record is available or timeout (30 seconds); returns
+    `TransactionRecord` with fee, consensus timestamp, status, accountId,
+    tokenId, and full HBAR transfer list
+- `TransactionResponse.getRecord(HederaClient)`: polls the network for
+  the full transaction record; replaces `UnimplementedError`
+- `TransactionRecord`: expanded model with new fields:
+  - `consensusTimestamp`: exact consensus time as `DateTime` in UTC
+  - `status`: final transaction status (e.g. `SUCCESS`)
+  - `accountId`: new account ID for `AccountCreateTransaction`
+  - `tokenId`: new token ID for `TokenCreateTransaction`
+  - `transfers`: list of HBAR transfers with `accountId` and `amount`
+- 24 new unit tests (409/409 -> 433/433 total passing)
+
+### Changed
+
+- `TransactionReceiptQuery` and `TransactionRecordQuery` renamed from
+  `TransactionGetReceiptQuery` and `TransactionGetRecordQuery` to avoid
+  naming collision with Protobuf-generated classes on Ubuntu CI
+- `transaction_receipt_query.dart` and `transaction_record_query.dart`
+  renamed accordingly
+
+### Status
+
+Phase 2 complete: full transaction query pipeline implemented.
+`TransactionReceiptQuery`, `TransactionRecordQuery`, and `getRecord()`  
+all available and verified.  
+Not ready for production use.  
+Next: ECDSA signing (v0.1.2-dev).  
+
 ## 0.1.0-dev
 
 Phase 2 complete: gRPC transaction execution, account management, and HBAR transfers verified on Hedera testnet.
