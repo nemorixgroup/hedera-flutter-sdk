@@ -4,7 +4,8 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 
 /// Demonstrates all Phase 2 transactions: AccountCreateTransaction,
 /// AccountUpdateTransaction, AccountDeleteTransaction,
-/// CryptoTransferTransaction, and TransactionGetReceiptQuery.
+/// CryptoTransferTransaction, TransactionReceiptQuery, and
+/// TransactionRecordQuery.
 ///
 /// Note: Steps that require a funded testnet account (execute via gRPC)
 /// are shown as code previews. Run account_lifecycle_example.dart for
@@ -195,9 +196,9 @@ Future<void> transactionExamples() async {
   print('  See: example/phase2/account_lifecycle_example.dart');
   print('');
 
-  // ---- TransactionGetReceiptQuery ----
+  // ---- TransactionReceiptQuery ----
 
-  print('--- TransactionGetReceiptQuery ---\n');
+  print('--- TransactionReceiptQuery ---\n');
 
   // Step 18: Query receipt by transaction ID directly
   // Use this when you have a transactionId from an external source
@@ -217,7 +218,7 @@ Future<void> transactionExamples() async {
   // Step 19: Execute the receipt query
   // Polls every 2 seconds up to 30 seconds until SUCCESS or error.
   print('Step 19: Execute receipt query (requires testnet connection)');
-  print('  final receipt = await TransactionGetReceiptQuery()');
+  print('  final receipt = await TransactionReceiptQuery()');
   print('      .setTransactionId(response.transactionId)');
   print('      .execute(client);');
   print('  print(receipt.status);    // SUCCESS');
@@ -225,14 +226,14 @@ Future<void> transactionExamples() async {
   print('  print(receipt.tokenId);   // 0.0.XXXXXX (if TokenCreateTx)');
   print('');
 
-  // Step 20: Difference between getReceipt() and TransactionGetReceiptQuery
-  print('Step 20: getReceipt() vs TransactionGetReceiptQuery');
+  // Step 20: Difference between getReceipt() and TransactionReceiptQuery
+  print('Step 20: getReceipt() vs TransactionReceiptQuery');
   print('  // Option A - via TransactionResponse (most common):');
   print('  final response = await tx.execute(client);');
   print('  final receipt = await response.getReceipt(client);');
   print('');
-  print('  // Option B - via TransactionGetReceiptQuery (external TX):');
-  print('  final receipt = await TransactionGetReceiptQuery()');
+  print('  // Option B - via TransactionReceiptQuery (external TX):');
+  print('  final receipt = await TransactionReceiptQuery()');
   print('      .setTransactionId(knownTxId)');
   print('      .execute(client);');
   print('');
@@ -241,9 +242,9 @@ Future<void> transactionExamples() async {
 
   print('=== Transaction examples complete ===\n');
 
-  // ---- TransactionGetRecordQuery ----
+  // ---- TransactionRecordQuery ----
 
-  print('--- TransactionGetRecordQuery ---\n');
+  print('--- TransactionRecordQuery ---\n');
 
   // Step 21: Query record by transaction ID directly
   // A record contains more information than a receipt:
@@ -252,7 +253,7 @@ Future<void> transactionExamples() async {
   // - full HBAR transfer list
   // - receipt status
   // Available for up to 180 seconds after consensus.
-  print('Step 21: Build TransactionGetRecordQuery');
+  print('Step 21: Build TransactionRecordQuery');
   final recordQuery = TransactionRecordQuery().setTransactionId(txId);
 
   print('Transaction ID: ${recordQuery.transactionId}');
@@ -261,7 +262,7 @@ Future<void> transactionExamples() async {
 
   // Step 22: Execute the record query
   print('Step 22: Execute record query (requires testnet connection)');
-  print('  final record = await TransactionGetRecordQuery()');
+  print('  final record = await TransactionRecordQuery()');
   print('      .setTransactionId(response.transactionId)');
   print('      .execute(client);');
   print('  print(record.status);             // SUCCESS');
