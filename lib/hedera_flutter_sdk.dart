@@ -41,6 +41,8 @@ export 'src/queries/account_balance_query.dart';
 export 'src/queries/account_info.dart';
 export 'src/queries/account_info_query.dart';
 export 'src/queries/query.dart';
+export 'src/queries/transaction_receipt_query.dart';
+export 'src/queries/transaction_record_query.dart';
 
 // Transactions
 export 'src/transactions/account_create_transaction.dart';

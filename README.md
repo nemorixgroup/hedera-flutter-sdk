@@ -16,7 +16,7 @@ This SDK is currently in **active development** by [Nemorix Group](https://nemor
 | Phase | Description | Status |
 |:------|:------------|:------:|
 | 1 | Architecture + Protobuf | ✅ Completed |
-| 2 | Crypto + Accounts | 🔄 In Progress |
+| 2 | Crypto + Accounts | 🔄 Near Complete |
 | 3 | HTS Tokens + NFTs | ⏳ Pending |
 | 4 | Mirror Node + HCS | ⏳ Pending |
 | 5 | Docs + pub.dev v1.0 | ⏳ Pending |
@@ -29,12 +29,20 @@ but no native Flutter/Dart SDK exists on pub.dev.
 
 This project closes that gap.
 
+## SDK Documentation & Knowledge Base
+
+This SDK is built on top of the [Hedera Knowledge Base](https://github.com/nemorixgroup/Hedera-Knowledge-Base), an in-depth guide to the Hedera network covering consensus, architecture, native services (HBAR, HTS, HCS, HFS), and the development ecosystem. Recommended reading before diving into the SDK internals.  
+
+Every implementation decision in `hedera_flutter_sdk` is grounded in the official
+Hedera API (HAPI) Protobuf definitions and verified against Hedera testnet -
+no third-party references, no unverified code.  
+
 ## Installation
 
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.1.0-dev
+  hedera_flutter_sdk: ^0.1.1-dev
 ```
 
 ## Quick Guide
@@ -155,7 +163,7 @@ final isValid = await publicKey.verify(
 print(isValid); // true
 ```
 
-## Current Features (v0.1.0-dev)
+## Current Features (v0.1.1-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -179,8 +187,23 @@ print(isValid); // true
 - Account queries: `AccountBalanceQuery`, `AccountInfoQuery` with
   `AccountInfo` model
 - EVM address alias support
-- gRPC execution: `execute()` via `HederaClient` for transactions and queries
-- `TransactionResponse`: `getReceipt()` and `getRecord()` via gRPC polling
+- gRPC execution pipeline: `buildBody()`, `buildSignedTransaction()`,
+  `execute()` via `HederaClient` with precheck code verification
+- `signWith(PrivateKey, HederaClient)`: sign with non-operator private key
+  using correct `TransactionBody` bytes; enables non-operator fee payers
+- `setPayerAccountId(AccountId)`: set a custom fee payer account;
+  defaults to operator if not set
+- `TransactionResponse`: `getReceipt()` and `getRecord()` with gRPC polling
+  (polls every 2 seconds; up to 30 seconds timeout)
+- `TransactionReceiptQuery`: public query class to poll the receipt of any
+  Hedera transaction by ID - including transactions not executed by the caller
+- `TransactionRecordQuery`: public query class to retrieve the full record
+  of a completed transaction including exact fee, consensus timestamp,
+  and full HBAR transfer list
+- `TransactionReceipt`: status, accountId, tokenId
+- `TransactionRecord`: transactionId, transactionFee, memo,
+  consensusTimestamp, status, accountId, tokenId, transfers
+- Integration tests verified on Hedera testnet (HashScan)  
 
 ## Planned Features
 
