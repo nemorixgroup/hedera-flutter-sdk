@@ -265,13 +265,13 @@ void main() {
       expect(response.getReceipt(client), isA<Future<TransactionReceipt>>());
     });
 
-    test('getRecord throws UnimplementedError', () async {
+    test('getRecord returns a Future<TransactionRecord>', () {
       final txId = TransactionId.fromString('0.0.12345@1706745600.0');
       final response = TransactionResponse(transactionId: txId);
       final client = HederaClient.forTestnet();
       expect(
-        () => response.getRecord(client),
-        throwsA(isA<UnimplementedError>()),
+        response.getRecord(client),
+        isA<Future<TransactionRecord>>(),
       );
     });
   });
