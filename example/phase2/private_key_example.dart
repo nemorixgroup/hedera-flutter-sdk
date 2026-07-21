@@ -49,5 +49,11 @@ Future<void> privateKeyExamples() async {
   print('Signature length: ${signature.length} bytes');
   print('');
 
+  // 7. Sign a message with ECDSA
+  final ecdsaSignature = await ecdsaKey.sign(message);
+  print('ECDSA signature:');
+  print('Signature length: ${ecdsaSignature.length} bytes');
+  print('');
+
   print('=== Private Key examples complete ===\n');
 }
