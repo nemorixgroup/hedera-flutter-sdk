@@ -3,11 +3,13 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 
 // fromBytes:        4 tests (creation, errors, immutability, type)
 // fromString:       5 tests (DER, raw hex, errors, whitespace)
-// derivePublicKey:  4 tests (consistency, uniqueness, size, ECDSA error)
+// derivePublicKey:  8 tests (consistency, uniqueness, size,
+//                   ECDSA consistency, uniqueness, size, type, prefix)
 // toHex:            2 tests (length, lowercase)
 // toDerString:      3 tests (prefix, length, toString)
-// verify:           5 tests (valid, tampered message,
-//                   tampered signature, wrong key, ECDSA error)
+// verify:           8 tests (valid, tampered message,
+//                   tampered signature, wrong key, ECDSA valid,
+//                   tampered message, tampered signature, wrong key)
 // PublicKeyType:    2 tests (names)
 void main() {
   group('PublicKey', () {
@@ -118,13 +120,50 @@ void main() {
         expect(publicKey.bytes.length, equals(32));
       });
 
-      test('throws UnimplementedError for ECDSA', () async {
+      // ---- ECDSA ----
+
+      test(
+        'ECDSA derives consistent public key from same private key',
+        () async {
+          final privateKey = await PrivateKey.generateECDSA();
+          final pubKey1 = await privateKey.derivePublicKey();
+          final pubKey2 = await privateKey.derivePublicKey();
+          expect(pubKey1.toHex(), equals(pubKey2.toHex()));
+        },
+      );
+
+      test(
+        'ECDSA different private keys produce different public keys',
+        () async {
+          final privateKey1 = await PrivateKey.generateECDSA();
+          final privateKey2 = await PrivateKey.generateECDSA();
+          final pubKey1 = await privateKey1.derivePublicKey();
+          final pubKey2 = await privateKey2.derivePublicKey();
+          expect(pubKey1.toHex(), isNot(equals(pubKey2.toHex())));
+        },
+      );
+
+      test('ECDSA public key is 33 bytes (compressed)', () async {
         final privateKey = await PrivateKey.generateECDSA();
-        expect(
-          privateKey.derivePublicKey,
-          throwsA(isA<UnimplementedError>()),
-        );
+        final publicKey = await privateKey.derivePublicKey();
+        expect(publicKey.bytes.length, equals(33));
       });
+
+      test('ECDSA public key has correct type', () async {
+        final privateKey = await PrivateKey.generateECDSA();
+        final publicKey = await privateKey.derivePublicKey();
+        expect(publicKey.type, equals(PublicKeyType.ecdsa));
+      });
+
+      test(
+        'ECDSA public key starts with 0x02 or 0x03 (compression prefix)',
+        () async {
+          final privateKey = await PrivateKey.generateECDSA();
+          final publicKey = await privateKey.derivePublicKey();
+          final firstByte = publicKey.bytes.first;
+          expect(firstByte == 0x02 || firstByte == 0x03, isTrue);
+        },
+      );
     });
 
     // ---- toHex ----
@@ -223,16 +262,58 @@ void main() {
         expect(isValid, isFalse);
       });
 
-      test('throws UnimplementedError for ECDSA', () async {
+      // ---- ECDSA ----
+
+      test('returns true for valid ECDSA signature', () async {
         final privateKey = await PrivateKey.generateECDSA();
-        final publicKey = PublicKey.fromBytes(
-          privateKey.bytes,
-          type: PublicKeyType.ecdsa,
+        final publicKey = await privateKey.derivePublicKey();
+        final message = [1, 2, 3, 4, 5];
+        final signature = await privateKey.sign(message);
+        final isValid = await publicKey.verify(
+          message: message,
+          signature: signature,
         );
-        expect(
-          () => publicKey.verify(message: [1, 2, 3], signature: []),
-          throwsA(isA<UnimplementedError>()),
+        expect(isValid, isTrue);
+      });
+
+      test('ECDSA returns false for tampered message', () async {
+        final privateKey = await PrivateKey.generateECDSA();
+        final publicKey = await privateKey.derivePublicKey();
+        final message = [1, 2, 3, 4, 5];
+        final signature = await privateKey.sign(message);
+        final tamperedMessage = [1, 2, 3, 4, 6];
+        final isValid = await publicKey.verify(
+          message: tamperedMessage,
+          signature: signature,
         );
+        expect(isValid, isFalse);
+      });
+
+      test('ECDSA returns false for tampered signature', () async {
+        final privateKey = await PrivateKey.generateECDSA();
+        final publicKey = await privateKey.derivePublicKey();
+        final message = [1, 2, 3, 4, 5];
+        final signature = await privateKey.sign(message);
+        final tamperedSignature = List<int>.from(signature);
+        tamperedSignature[0] = tamperedSignature[0] ^ 0xFF;
+        final isValid = await publicKey.verify(
+          message: message,
+          signature: tamperedSignature,
+        );
+        expect(isValid, isFalse);
+      });
+
+      test('ECDSA returns false for wrong public key', () async {
+        final privateKey1 = await PrivateKey.generateECDSA();
+        final privateKey2 = await PrivateKey.generateECDSA();
+        final publicKey2 = await privateKey2.derivePublicKey();
+        final message = [1, 2, 3, 4, 5];
+        final signature = await privateKey1.sign(message);
+        final isValid = await publicKey2.verify(
+          message: message,
+          signature: signature,
+        );
+        expect(isValid, isFalse);
       });
     });
 
