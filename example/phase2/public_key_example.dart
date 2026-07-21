@@ -61,5 +61,36 @@ Future<void> publicKeyExamples() async {
   print('Same key derived twice: ${publicKey.toHex() == pubKey2.toHex()}');
   print('');
 
+  // 8. ECDSA: derive public key from private key
+  final ecdsaPrivateKey = await PrivateKey.generateECDSA();
+  final ecdsaPublicKey = await ecdsaPrivateKey.derivePublicKey();
+  print('Public key derived from ECDSA private key:');
+  print('Type: ${ecdsaPublicKey.type.name}');
+  print('Hex: ${ecdsaPublicKey.toHex()}');
+  print('DER: ${ecdsaPublicKey.toDerString()}');
+  print('Bytes length: ${ecdsaPublicKey.bytes.length} bytes (compressed)');
+  print('');
+
+  // 9. ECDSA: verify a valid signature
+  final ecdsaMessage = [1, 2, 3, 4, 5];
+  final ecdsaSignature = await ecdsaPrivateKey.sign(ecdsaMessage);
+  final isEcdsaValid = await ecdsaPublicKey.verify(
+    message: ecdsaMessage,
+    signature: ecdsaSignature,
+  );
+  print('ECDSA signature verification:');
+  print('Valid signature: $isEcdsaValid');
+  print('');
+
+  // 10. ECDSA: verify a tampered message (should fail)
+  final ecdsaTamperedMessage = [1, 2, 3, 4, 6];
+  final isEcdsaInvalid = await ecdsaPublicKey.verify(
+    message: ecdsaTamperedMessage,
+    signature: ecdsaSignature,
+  );
+  print('ECDSA tampered message verification:');
+  print('Valid: $isEcdsaInvalid (expected: false)');
+  print('');
+
   print('=== Public Key examples complete ===\n');
 }

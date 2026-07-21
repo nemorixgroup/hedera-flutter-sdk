@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.1.1-dev
+  hedera_flutter_sdk: ^0.1.2-dev
 ```
 
 ## Quick Guide
@@ -173,7 +173,8 @@ print(isValid); // true
 - `Mnemonic.toPrivateKey()` and `toLegacyPrivateKey()` for HD key
   derivation (12 and 24-word mnemonics; 22-word raises UnsupportedError)
 - `PrivateKey` with ED25519 and ECDSA generation, import, and signing
-- `PublicKey` with derivation, import, and ED25519 signature verification
+- `PublicKey` with derivation, import, and ED25519/ECDSA(secp256k1) 
+   signature verification
 - Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
 - `HederaStatusException` and `HederaStatusCode` for typed error handling
 - `HederaConstants` with protocol-level values (ports, fees, endpoints)

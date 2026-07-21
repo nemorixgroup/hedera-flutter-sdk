@@ -189,13 +189,75 @@ void main() {
         expect(sig1, isNot(equals(sig2)));
       });
 
-      test('throws UnimplementedError for ECDSA signing', () async {
+      // ---- ECDSA ----
+
+      test('returns 64-byte signature for ECDSA', () async {
         final key = await PrivateKey.generateECDSA();
-        expect(
-          () => key.sign([1, 2, 3]),
-          throwsA(isA<UnimplementedError>()),
-        );
+        final signature = await key.sign([1, 2, 3]);
+        expect(signature.length, equals(64));
       });
+
+      test(
+        'ECDSA same message produces same signature '
+        '(RFC 6979 deterministic)',
+        () async {
+          final key = await PrivateKey.generateECDSA();
+          final message = [1, 2, 3, 4, 5];
+          final sig1 = await key.sign(message);
+          final sig2 = await key.sign(message);
+          expect(sig1, equals(sig2));
+        },
+      );
+
+      test('ECDSA different messages produce different signatures', () async {
+        final key = await PrivateKey.generateECDSA();
+        final sig1 = await key.sign([1, 2, 3]);
+        final sig2 = await key.sign([4, 5, 6]);
+        expect(sig1, isNot(equals(sig2)));
+      });
+
+      test('ECDSA different keys produce different signatures', () async {
+        final key1 = await PrivateKey.generateECDSA();
+        final key2 = await PrivateKey.generateECDSA();
+        final message = [1, 2, 3];
+        final sig1 = await key1.sign(message);
+        final sig2 = await key2.sign(message);
+        expect(sig1, isNot(equals(sig2)));
+      });
+
+      test('ECDSA signature has low-S value (s <= n/2)', () async {
+        // secp256k1 curve order n
+        final n = BigInt.parse(
+          'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141',
+          radix: 16,
+        );
+        final halfN = n >> 1;
+
+        final key = await PrivateKey.generateECDSA();
+        final signature = await key.sign([1, 2, 3]);
+
+        var s = BigInt.zero;
+        for (final byte in signature.sublist(32, 64)) {
+          s = (s << 8) | BigInt.from(byte);
+        }
+        expect(s <= halfN, isTrue);
+      });
+
+      test(
+        'ECDSA signature round-trips through PublicKey.verify',
+        () async {
+          final key = await PrivateKey.generateECDSA();
+          final publicKey = await key.derivePublicKey();
+          final message = [1, 2, 3, 4, 5];
+          final signature = await key.sign(message);
+
+          final isValid = await publicKey.verify(
+            message: message,
+            signature: signature,
+          );
+          expect(isValid, isTrue);
+        },
+      );
     });
 
     // ---- toString ----

@@ -82,7 +82,9 @@ abstract class Transaction<T extends Transaction<T>> {
   TransactionId? _transactionId;
 
   /// The map of public key hex strings to their signatures.
-  final Map<String, List<int>> _signatures;
+  // final Map<String, List<int>> _signatures;
+  /// The map of public key hex strings to their (signature, key type) pairs.
+  final Map<String, ({List<int> signature, PublicKeyType type})> _signatures;
 
   // ---- Setters (fluent API) ----
 
@@ -218,7 +220,8 @@ abstract class Transaction<T extends Transaction<T>> {
     final bytes = toBytes();
     final signature = await privateKey.sign(bytes);
     final publicKey = await privateKey.derivePublicKey();
-    _signatures[publicKey.toHex()] = signature;
+    _signatures[publicKey.toHex()] =
+        (signature: signature, type: publicKey.type);
     return this as T;
   }
 
@@ -238,7 +241,8 @@ abstract class Transaction<T extends Transaction<T>> {
     final bodyBytes = _buildBodyBytes(client);
     final signature = await privateKey.sign(bodyBytes);
     final publicKey = await privateKey.derivePublicKey();
-    _signatures[publicKey.toHex()] = signature;
+    _signatures[publicKey.toHex()] =
+        (signature: signature, type: publicKey.type);
     return this as T;
   }
 
@@ -251,7 +255,8 @@ abstract class Transaction<T extends Transaction<T>> {
   /// transaction.addSignature(publicKey, signature);
   /// ```
   T addSignature(PublicKey publicKey, List<int> signature) {
-    _signatures[publicKey.toHex()] = signature;
+    _signatures[publicKey.toHex()] =
+        (signature: signature, type: publicKey.type);
     return this as T;
   }
 
@@ -346,13 +351,18 @@ abstract class Transaction<T extends Transaction<T>> {
 
     final sigPairs = _signatures.entries.map((entry) {
       final pubKeyHex = entry.key;
-      final signatureBytes = entry.value;
+      final sigData = entry.value;
       final pubKeyBytes = _hexToBytes(pubKeyHex);
 
-      return SignaturePair(
-        pubKeyPrefix: pubKeyBytes,
-        ed25519: signatureBytes,
-      );
+      return sigData.type == PublicKeyType.ed25519
+          ? SignaturePair(
+              pubKeyPrefix: pubKeyBytes,
+              ed25519: sigData.signature,
+            )
+          : SignaturePair(
+              pubKeyPrefix: pubKeyBytes,
+              eCDSASecp256k1: sigData.signature,
+            );
     }).toList();
 
     return SignedTransaction(
@@ -416,15 +426,22 @@ abstract class Transaction<T extends Transaction<T>> {
       }
       final signature = await operatorKey.sign(bodyBytes);
       final publicKey = await operatorKey.derivePublicKey();
-      _signatures[publicKey.toHex()] = signature;
+      _signatures[publicKey.toHex()] =
+          (signature: signature, type: publicKey.type);
     }
 
     // 3. Build SignedTransaction
     final sigPairs = _signatures.entries.map((entry) {
-      return SignaturePair(
-        pubKeyPrefix: _hexToBytes(entry.key),
-        ed25519: entry.value,
-      );
+      final sigData = entry.value;
+      return sigData.type == PublicKeyType.ed25519
+          ? SignaturePair(
+              pubKeyPrefix: _hexToBytes(entry.key),
+              ed25519: sigData.signature,
+            )
+          : SignaturePair(
+              pubKeyPrefix: _hexToBytes(entry.key),
+              eCDSASecp256k1: sigData.signature,
+            );
     }).toList();
 
     final signedTx = SignedTransaction(

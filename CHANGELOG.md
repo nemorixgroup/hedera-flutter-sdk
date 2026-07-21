@@ -5,6 +5,54 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.2-dev
+
+Phase 2 complete: ECDSA(secp256k1) signing support, for EVM-compatible accounts.
+
+### Added
+
+- `PrivateKey.derivePublicKey()`: ECDSA(secp256k1) public key derivation
+  using pointycastle's `ECDomainParameters('secp256k1')`; returns the
+  compressed 33-byte form (`0x02`/`0x03` prefix)
+- `PrivateKey.sign()`: ECDSA(secp256k1) signing via `ECDSASigner` with
+  RFC 6979 deterministic k generation and low-S normalization
+  (`s <= n/2`), as required by Hedera; returns the raw 64-byte (r + s)
+  signature
+- `PublicKey.fromBytes()`: accepts 33-byte compressed ECDSA public keys
+- `PublicKey.toDerString()`: DER encoding for ECDSA public keys
+- `PublicKey.verify()`: ECDSA(secp256k1) signature verification
+- `PublicKey.fromString()`: recognizes DER-encoded and raw hex ECDSA
+  public keys, alongside the existing ED25519 formats
+- `HederaConstants.ecdsaPublicKeyPrefix`: DER prefix for ECDSA public keys
+- ECDSA examples in `public_key_example.dart` and `private_key_example.dart`
+- 32 new unit tests in `private_key_test.dart` and `public_key_test.dart`
+  covering ECDSA sign, derivePublicKey, and verify (mirroring existing
+  ED25519 coverage, plus low-S normalization and compression prefix checks)
+- 5 new unit tests in `transaction_test.dart` verifying `SignaturePair`
+  routes to the correct field by key type, including a mixed-signer
+  transaction with both ED25519 and ECDSA signatures
+- 450 total unit tests passing
+
+### Fixed
+
+- ECDSA `sign()`/`verify()` were hashing the message with SHA-256
+  instead of the Keccak-256 required by HIP-222 for EVM compatibility;
+  now use pointycastle's `KeccakDigest(256)`
+- `Transaction.buildSignedTransaction()` and `Transaction.execute()`
+  always built `SignaturePair` with the `ed25519` field regardless of
+  key type, silently misrouting ECDSA signatures into the wrong
+  protobuf oneof field; `_signatures` now tracks `PublicKeyType` per
+  entry and branches to `eCDSASecp256k1` accordingly
+
+### Status
+
+Phase 2 complete: ECDSA(secp256k1) signing implemented and verified
+via unit tests, alongside the existing ED25519 support.  
+Live testnet integration verification for ECDSA (account creation,
+signing, receipt confirmation) deferred to next session.  
+Not ready for production use.  
+Next: multi-node load balancing (v0.1.3-dev).  
+
 ## 0.1.1-dev
 
 Transaction query completeness: public receipt and record query classes.
