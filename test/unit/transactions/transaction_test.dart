@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
+import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
@@ -233,6 +234,114 @@ void main() {
           throwsA(isA<ArgumentError>()),
         );
       });
+    });
+
+    // ---- buildSignedTransaction ----
+
+    group('buildSignedTransaction', () {
+      test('uses the ed25519 field for ED25519 signatures', () async {
+        final tx = _TestTransaction();
+        final privateKey = await PrivateKey.generateED25519();
+        final client = HederaClient.forTestnet().setOperator(
+          AccountId.fromString('0.0.12345'),
+          privateKey,
+        );
+        await tx.sign(privateKey);
+
+        final signedTx = tx.buildSignedTransaction(client);
+        final sigPair = signedTx.sigMap.sigPair.single;
+
+        expect(
+          sigPair.whichSignature(),
+          equals(SignaturePair_Signature.ed25519),
+        );
+      });
+
+      test('uses the eCDSASecp256k1 field for ECDSA signatures', () async {
+        final tx = _TestTransaction();
+        final privateKey = await PrivateKey.generateECDSA();
+        final client = HederaClient.forTestnet().setOperator(
+          AccountId.fromString('0.0.12345'),
+          privateKey,
+        );
+        await tx.sign(privateKey);
+
+        final signedTx = tx.buildSignedTransaction(client);
+        final sigPair = signedTx.sigMap.sigPair.single;
+
+        expect(
+          sigPair.whichSignature(),
+          equals(SignaturePair_Signature.eCDSASecp256k1),
+        );
+      });
+
+      test(
+        'ECDSA signature is not misrouted into the ed25519 field',
+        () async {
+          final tx = _TestTransaction();
+          final privateKey = await PrivateKey.generateECDSA();
+          final client = HederaClient.forTestnet().setOperator(
+            AccountId.fromString('0.0.12345'),
+            privateKey,
+          );
+          await tx.sign(privateKey);
+
+          final signedTx = tx.buildSignedTransaction(client);
+          final sigPair = signedTx.sigMap.sigPair.single;
+
+          expect(sigPair.hasEd25519(), isFalse);
+          expect(sigPair.hasECDSASecp256k1(), isTrue);
+        },
+      );
+
+      test(
+        'pubKeyPrefix contains the full 33-byte compressed ECDSA key',
+        () async {
+          final tx = _TestTransaction();
+          final privateKey = await PrivateKey.generateECDSA();
+          final publicKey = await privateKey.derivePublicKey();
+          final client = HederaClient.forTestnet().setOperator(
+            AccountId.fromString('0.0.12345'),
+            privateKey,
+          );
+          await tx.sign(privateKey);
+
+          final signedTx = tx.buildSignedTransaction(client);
+          final sigPair = signedTx.sigMap.sigPair.single;
+
+          expect(sigPair.pubKeyPrefix.length, equals(33));
+          expect(sigPair.pubKeyPrefix, equals(publicKey.bytes));
+        },
+      );
+
+      test(
+        'mixed ED25519 and ECDSA signatures each use their own field',
+        () async {
+          final tx = _TestTransaction();
+          final ed25519Key = await PrivateKey.generateED25519();
+          final ecdsaKey = await PrivateKey.generateECDSA();
+          final client = HederaClient.forTestnet().setOperator(
+            AccountId.fromString('0.0.12345'),
+            ed25519Key,
+          );
+          await tx.sign(ed25519Key);
+          await tx.sign(ecdsaKey);
+
+          final signedTx = tx.buildSignedTransaction(client);
+          final sigPairs = signedTx.sigMap.sigPair;
+
+          expect(sigPairs.length, equals(2));
+          final signatureTypes =
+              sigPairs.map((pair) => pair.whichSignature()).toSet();
+          expect(
+            signatureTypes,
+            equals({
+              SignaturePair_Signature.ed25519,
+              SignaturePair_Signature.eCDSASecp256k1,
+            }),
+          );
+        },
+      );
     });
 
     // ---- toBytes ----
