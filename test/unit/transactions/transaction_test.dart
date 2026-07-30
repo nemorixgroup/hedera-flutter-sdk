@@ -248,7 +248,7 @@ void main() {
         );
         await tx.sign(privateKey);
 
-        final signedTx = tx.buildSignedTransaction(client);
+        final signedTx = await tx.buildSignedTransaction(client);
         final sigPair = signedTx.sigMap.sigPair.single;
 
         expect(
@@ -266,7 +266,7 @@ void main() {
         );
         await tx.sign(privateKey);
 
-        final signedTx = tx.buildSignedTransaction(client);
+        final signedTx = await tx.buildSignedTransaction(client);
         final sigPair = signedTx.sigMap.sigPair.single;
 
         expect(
@@ -286,7 +286,7 @@ void main() {
           );
           await tx.sign(privateKey);
 
-          final signedTx = tx.buildSignedTransaction(client);
+          final signedTx = await tx.buildSignedTransaction(client);
           final sigPair = signedTx.sigMap.sigPair.single;
 
           expect(sigPair.hasEd25519(), isFalse);
@@ -306,7 +306,7 @@ void main() {
           );
           await tx.sign(privateKey);
 
-          final signedTx = tx.buildSignedTransaction(client);
+          final signedTx = await tx.buildSignedTransaction(client);
           final sigPair = signedTx.sigMap.sigPair.single;
 
           expect(sigPair.pubKeyPrefix.length, equals(33));
@@ -327,7 +327,7 @@ void main() {
           await tx.sign(ed25519Key);
           await tx.sign(ecdsaKey);
 
-          final signedTx = tx.buildSignedTransaction(client);
+          final signedTx = await tx.buildSignedTransaction(client);
           final sigPairs = signedTx.sigMap.sigPair;
 
           expect(sigPairs.length, equals(2));

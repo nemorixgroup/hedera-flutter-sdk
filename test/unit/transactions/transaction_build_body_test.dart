@@ -46,27 +46,28 @@ void main() {
     // ---- validation ----
 
     group('validation', () {
-      test('throws ArgumentError if client has no operator account ID', () {
+      test('throws ArgumentError if client has no operator account ID',
+          () async {
         final tx = _TestTransaction();
         final clientWithoutOperator = HederaClient.forTestnet();
-        expect(
-          () => tx.buildBody(clientWithoutOperator),
+        await expectLater(
+          tx.buildBody(clientWithoutOperator),
           throwsA(isA<ArgumentError>()),
         );
       });
 
-      test('does not throw if client has operator account ID', () {
+      test('does not throw if client has operator account ID', () async {
         final tx = _TestTransaction();
-        expect(() => tx.buildBody(client), returnsNormally);
+        await expectLater(tx.buildBody(client), completes);
       });
     });
 
     // ---- transactionID ----
 
     group('transactionID', () {
-      test('encodes operator accountID in transactionID', () {
+      test('encodes operator accountID in transactionID', () async {
         final tx = _TestTransaction();
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(
           body.transactionID.accountID.accountNum.toInt(),
@@ -74,9 +75,9 @@ void main() {
         );
       });
 
-      test('transactionValidStart seconds is greater than zero', () {
+      test('transactionValidStart seconds is greater than zero', () async {
         final tx = _TestTransaction();
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(
           body.transactionID.transactionValidStart.seconds.toInt(),
@@ -84,9 +85,9 @@ void main() {
         );
       });
 
-      test('transactionValidStart nanos is non-negative', () {
+      test('transactionValidStart nanos is non-negative', () async {
         final tx = _TestTransaction();
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(
           body.transactionID.transactionValidStart.nanos,
@@ -99,9 +100,9 @@ void main() {
         final tx1 = _TestTransaction();
         final tx2 = _TestTransaction();
 
-        final body1 = tx1.buildBody(client);
+        final body1 = await tx1.buildBody(client);
         await Future<void>.delayed(const Duration(milliseconds: 1));
-        final body2 = tx2.buildBody(client);
+        final body2 = await tx2.buildBody(client);
 
         expect(
           body2.transactionID.transactionValidStart.seconds.toInt(),
@@ -115,19 +116,19 @@ void main() {
     // ---- nodeAccountID ----
 
     group('nodeAccountID', () {
-      test('defaults to node 0.0.3 if not set', () {
+      test('defaults to a selected node if not set', () async {
         final tx = _TestTransaction();
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
-        expect(body.nodeAccountID.accountNum.toInt(), equals(3));
         expect(body.nodeAccountID.shardNum.toInt(), equals(0));
         expect(body.nodeAccountID.realmNum.toInt(), equals(0));
+        expect(body.nodeAccountID.accountNum.toInt(), greaterThan(0));
       });
 
-      test('uses setNodeAccountId value when set', () {
+      test('uses setNodeAccountId value when set', () async {
         final tx = _TestTransaction()
           ..setNodeAccountId(AccountId.fromString('0.0.5'));
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(body.nodeAccountID.accountNum.toInt(), equals(5));
       });
@@ -136,9 +137,9 @@ void main() {
     // ---- transactionFee ----
 
     group('transactionFee', () {
-      test('encodes maxTransactionFee in tinybars', () {
+      test('encodes maxTransactionFee in tinybars', () async {
         final tx = _TestTransaction();
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(
           body.transactionFee.toInt(),
@@ -146,9 +147,9 @@ void main() {
         );
       });
 
-      test('reflects custom maxTransactionFee when set', () {
+      test('reflects custom maxTransactionFee when set', () async {
         final tx = _TestTransaction()..setMaxTransactionFee(Hbar(5));
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(
           body.transactionFee.toInt(),
@@ -160,9 +161,9 @@ void main() {
     // ---- transactionValidDuration ----
 
     group('transactionValidDuration', () {
-      test('encodes default validDuration in seconds', () {
+      test('encodes default validDuration in seconds', () async {
         final tx = _TestTransaction();
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(
           body.transactionValidDuration.seconds.toInt(),
@@ -170,9 +171,9 @@ void main() {
         );
       });
 
-      test('reflects custom validDuration when set', () {
+      test('reflects custom validDuration when set', () async {
         final tx = _TestTransaction()..setValidDuration(60);
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(
           body.transactionValidDuration.seconds.toInt(),
@@ -184,16 +185,16 @@ void main() {
     // ---- memo ----
 
     group('memo', () {
-      test('encodes empty memo by default', () {
+      test('encodes empty memo by default', () async {
         final tx = _TestTransaction();
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(body.memo, equals(''));
       });
 
-      test('encodes memo when set', () {
+      test('encodes memo when set', () async {
         final tx = _TestTransaction()..setMemo('NemorixPay transfer');
-        final body = tx.buildBody(client);
+        final body = await tx.buildBody(client);
 
         expect(body.memo, equals('NemorixPay transfer'));
       });
@@ -202,8 +203,9 @@ void main() {
     // ---- applyToBody ----
 
     group('applyToBody', () {
-      test('calls applyToBody on the subclass', () {
-        final tx = _TestTransaction()..buildBody(client);
+      test('calls applyToBody on the subclass', () async {
+        final tx = _TestTransaction();
+        await tx.buildBody(client);
         expect(tx.applyToBodyCalled, isTrue);
       });
     });

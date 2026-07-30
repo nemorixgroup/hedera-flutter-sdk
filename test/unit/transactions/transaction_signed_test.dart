@@ -46,21 +46,21 @@ void main() {
       test('returns a SignedTransaction', () async {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed, isA<SignedTransaction>());
       });
 
       test('bodyBytes is non-empty', () async {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed.bodyBytes, isNotEmpty);
       });
 
       test('bodyBytes deserializes to a valid TransactionBody', () async {
         final tx = _TestTransaction()..setMemo('test memo');
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
 
         final body = hedera_tx.TransactionBody.fromBuffer(signed.bodyBytes);
         expect(body.memo, equals('test memo'));
@@ -69,7 +69,7 @@ void main() {
       test('sigMap is included', () async {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed.hasSigMap(), isTrue);
       });
     });
@@ -80,7 +80,7 @@ void main() {
       test('sigMap has one sigPair after signing with one key', () async {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed.sigMap.sigPair.length, equals(1));
       });
 
@@ -89,34 +89,34 @@ void main() {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
         await tx.sign(key2);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed.sigMap.sigPair.length, equals(2));
       });
 
       test('sigPair contains non-empty pubKeyPrefix', () async {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed.sigMap.sigPair.first.pubKeyPrefix, isNotEmpty);
       });
 
       test('sigPair contains non-empty ed25519 signature', () async {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed.sigMap.sigPair.first.ed25519, isNotEmpty);
       });
 
       test('ed25519 signature is 64 bytes', () async {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed.sigMap.sigPair.first.ed25519.length, equals(64));
       });
 
-      test('sigMap is empty when no signatures added', () {
+      test('sigMap is empty when no signatures added', () async {
         final tx = _TestTransaction();
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
         expect(signed.sigMap.sigPair, isEmpty);
       });
     });
@@ -127,7 +127,7 @@ void main() {
       test('bodyBytes contains operator accountID', () async {
         final tx = _TestTransaction();
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
 
         final body = hedera_tx.TransactionBody.fromBuffer(signed.bodyBytes);
         expect(
@@ -140,7 +140,7 @@ void main() {
         final tx = _TestTransaction()
           ..setNodeAccountId(AccountId.fromString('0.0.5'));
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
 
         final body = hedera_tx.TransactionBody.fromBuffer(signed.bodyBytes);
         expect(body.nodeAccountID.accountNum.toInt(), equals(5));
@@ -149,7 +149,7 @@ void main() {
       test('bodyBytes contains transactionFee', () async {
         final tx = _TestTransaction()..setMaxTransactionFee(Hbar(3));
         await tx.sign(privateKey);
-        final signed = tx.buildSignedTransaction(client);
+        final signed = await tx.buildSignedTransaction(client);
 
         final body = hedera_tx.TransactionBody.fromBuffer(signed.bodyBytes);
         expect(body.transactionFee.toInt(), equals(Hbar(3).toTinybars()));
@@ -159,11 +159,11 @@ void main() {
     // ---- throws ----
 
     group('throws', () {
-      test('throws ArgumentError if client has no operator', () {
+      test('throws ArgumentError if client has no operator', () async {
         final tx = _TestTransaction();
         final clientWithoutOperator = HederaClient.forTestnet();
-        expect(
-          () => tx.buildSignedTransaction(clientWithoutOperator),
+        await expectLater(
+          tx.buildSignedTransaction(clientWithoutOperator),
           throwsA(isA<ArgumentError>()),
         );
       });
