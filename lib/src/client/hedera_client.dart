@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:grpc/grpc.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_network.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_node.dart';
+import 'package:hedera_flutter_sdk/src/client/retry_policy.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
 import 'package:hedera_flutter_sdk/src/crypto/private_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
@@ -50,6 +51,21 @@ class HederaClient {
 
   /// The operator private key; signs transactions.
   PrivateKey? _operatorPrivateKey;
+
+  // -------------------------------------
+  /// The retry policy for transient node/network failures.
+  /// Defaults to [RetryPolicy] with standard settings.
+  RetryPolicy _retryPolicy = const RetryPolicy();
+
+  /// Sets the retry policy for this client.
+  HederaClient setRetryPolicy(RetryPolicy policy) {
+    _retryPolicy = policy;
+    return this;
+  }
+
+  /// The active retry policy.
+  RetryPolicy get retryPolicy => _retryPolicy;
+  // -------------------------------------
 
   /// Maximum fee the client will pay for a single transaction.
   /// Defaults to 2 HBAR.
