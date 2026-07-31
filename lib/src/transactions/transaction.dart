@@ -419,6 +419,35 @@ abstract class Transaction<T extends Transaction<T>> {
   ///     .execute(client);
   /// ```
   Future<TransactionResponse> execute(HederaClient client) async {
+    final wasPreSigned = isSigned;
+    final policy = client.retryPolicy;
+
+    Object? lastError;
+    for (var attempt = 1; attempt <= policy.maxAttempts; attempt++) {
+      try {
+        return await _executeOnce(client);
+      } catch (e) {
+        lastError = e;
+        if (!policy.isRetryable(e) || attempt == policy.maxAttempts) rethrow;
+
+        // Failover to a new node only if the SDK still holds the
+        // signing key (the operator auto-sign path). Pre-signed
+        // transactions must retry against the same node, since we
+        // cannot re-sign with a key we no longer have.
+        if (!wasPreSigned) {
+          _builtBodyBytes = null;
+          _signatures.clear();
+        }
+
+        await Future<void>.delayed(policy.backoffFor(attempt));
+      }
+    }
+    throw StateError('execute(): retry loop exited unexpectedly ($lastError)');
+  }
+
+  /// Performs a single execution attempt: builds (or reuses) the
+  /// signed transaction and submits it via gRPC.
+  Future<TransactionResponse> _executeOnce(HederaClient client) async {
     // 1. Build complete TransactionBody
     final bodyBytes = await _buildBodyBytes(client);
 
@@ -426,9 +455,7 @@ abstract class Transaction<T extends Transaction<T>> {
     if (!isSigned) {
       final operatorKey = client.operatorPrivateKey;
       if (operatorKey == null) {
-        throw const HederaStatusException(
-          HederaStatusCode.invalidSignature,
-        );
+        throw const HederaStatusException(HederaStatusCode.invalidSignature);
       }
       final signature = await operatorKey.sign(bodyBytes);
       final publicKey = await operatorKey.derivePublicKey();
@@ -471,13 +498,13 @@ abstract class Transaction<T extends Transaction<T>> {
 
     final builtBody =
         hedera_transaction.TransactionBody.fromBuffer(_builtBodyBytes!);
-
     final txAccountId = builtBody.transactionID.accountID;
+    final accountIdStr = '${txAccountId.shardNum}.'
+        '${txAccountId.realmNum}.'
+        '${txAccountId.accountNum}';
     final txId = _transactionId ??
         TransactionId(
-          accountId: '${txAccountId.shardNum}.'
-              '${txAccountId.realmNum}.'
-              '${txAccountId.accountNum}',
+          accountId: accountIdStr,
           validStartSeconds:
               builtBody.transactionID.transactionValidStart.seconds.toInt(),
           validStartNanos: builtBody.transactionID.transactionValidStart.nanos,
