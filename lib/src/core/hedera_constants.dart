@@ -101,4 +101,9 @@ class HederaConstants {
   /// DER prefix for ECDSA secp256k1 public keys (ASN.1 encoding).
   /// OID 1.3.132.0.10 - compressed point (33 bytes)
   static const String ecdsaPublicKeyPrefix = '302d300706052b8104000a032200';
+
+  /// Default maximum number of attempts (including the first) before
+  /// giving up on a transaction or query due to transient node/network
+  /// failures.
+  static const int defaultMaxRetryAttempts = 5;
 }

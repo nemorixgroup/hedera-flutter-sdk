@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.1.2-dev
+  hedera_flutter_sdk: ^0.1.3-dev
 ```
 
 ## Quick Guide
@@ -163,7 +163,7 @@ final isValid = await publicKey.verify(
 print(isValid); // true
 ```
 
-## Current Features (v0.1.1-dev)
+## Current Features (v0.1.3-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -205,6 +205,12 @@ print(isValid); // true
 - `TransactionRecord`: transactionId, transactionFee, memo,
   consensusTimestamp, status, accountId, tokenId, transfers
 - Integration tests verified on Hedera testnet (HashScan)  
+- ECDSA(secp256k1) signing, alongside ED25519 (`PrivateKey.sign()`,
+  `derivePublicKey()`, `PublicKey.verify()`)
+- Multi-node load balancing: dynamic node list from the Mirror Node
+  REST API with round-robin selection (`HederaClient.selectNode()`)
+- Retry/failover: configurable `RetryPolicy` for transient node
+  failures, with automatic failover to a new node when safe
 
 ## Planned Features
 

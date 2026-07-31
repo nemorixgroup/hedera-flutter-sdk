@@ -5,6 +5,76 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.3-dev
+
+Phase 2 extension: multi-node load balancing with retry/failover.
+
+### Added
+
+- `HederaNode`: model representing a single consensus node
+  (account ID + gRPC endpoint)
+- `HederaClient.selectNode()`: round-robin node selection over a
+  dynamically fetched node list
+- `HederaClient._getNodeList()`: fetches the live node list from the
+  Mirror Node REST API (`/api/v1/network/nodes`), cached for 24 hours;
+  filters each node's `service_endpoints` by the port matching the
+  active network (50211 insecure, 50212 TLS for mainnet); falls back
+  to the static `0.0.3` node if the Mirror Node is unreachable
+- `RetryPolicy`: configurable retry policy for transient node/network
+  failures (`lib/src/client/retry_policy.dart`)
+  - `isRetryable(Object error)`: retries `GrpcError` codes
+    `unavailable`, `deadlineExceeded`, `internal`; never retries
+    business errors like `HederaStatusException` (e.g.
+    `INVALID_SIGNATURE`), since those fail identically on any node
+  - `backoffFor(int attempt)`: exponential backoff, capped at
+    `maxBackoff`
+  - `HederaClient.setRetryPolicy()`/`retryPolicy`: configure per client
+- `HederaConstants.defaultMaxRetryAttempts`: defaults to 5
+- `Transaction.execute()`: now retries transient failures per the
+  active `RetryPolicy`, rotating to a new node between attempts when
+  the SDK still holds the signing key (operator auto-sign path); for
+  pre-signed transactions (`sign()`/`signWith()` called before
+  `execute()`), retries against the same node instead, since the SDK
+  no longer holds the private key needed to re-sign for a new node
+- `example/phase2/node_selection_check.dart`: manual verification
+  script for node selection behavior
+- `example/phase2/retry_behavior_check_example.dart`: manual
+  verification script covering 4 retry/failover scenarios (transient
+  recovery, exhausted attempts, non-retryable business errors,
+  pre-signed same-node retry)
+- 43 new unit tests: `retry_policy_test.dart` (18 tests),
+  `transaction_retry_test.dart` (7 tests), plus updates to existing
+  `buildBody`/`buildSignedTransaction` coverage
+- 475 total unit tests passing
+
+### Changed
+
+- **BREAKING**: `Transaction.buildBody()` and
+  `Transaction.buildSignedTransaction()` are now `async` (return
+  `Future`), since they may call `HederaClient.selectNode()`
+- `Transaction.buildBody()`: uses `client.selectNode()` instead of
+  the hardcoded `AccountId.fromString('0.0.3')` default when no
+  `nodeAccountId` is explicitly set
+
+### Verified
+
+- Real Mirror Node fetch and round-robin confirmed manually against
+  Hedera testnet: rotates through real nodes 0.0.3–0.0.9 with
+  matching real IPs, wraps around correctly, caching confirmed
+  (only first call hits the network)
+- Retry/failover behavior confirmed manually across all 4 scenarios
+  (see `retry_behavior_check_example.dart`), including that business
+  errors are never retried and pre-signed transactions correctly
+  skip re-signing
+
+### Status
+
+Phase 2 extension complete: multi-node load balancing (fetch +
+round-robin) and retry/failover both implemented and verified.   
+Not ready for production use.   
+Next: multi-signature support - `KeyList` with M-of-N threshold
+(v0.1.4-dev), before starting Phase 3 (HTS).  
+
 ## 0.1.2-dev
 
 Phase 2 complete: ECDSA(secp256k1) signing support, for EVM-compatible accounts.

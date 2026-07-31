@@ -1,6 +1,8 @@
+import 'phase2/node_selection_check_example.dart';
 import 'phase2/private_key_example.dart';
 import 'phase2/public_key_example.dart';
 import 'phase2/query_example.dart';
+import 'phase2/retry_behavior_check_example.dart';
 import 'phase2/transaction_example.dart';
 import 'phase2/wallet_example.dart';
 
@@ -75,6 +77,8 @@ import 'phase2/wallet_example.dart';
 ///   - signWith() for non-operator signing
 ///   - setPayerAccountId() for custom fee payers
 ///   - AccountBalanceQuery, AccountInfoQuery
+///   - Multi-node load balancing: dynamic node list from the Mirror
+///     Node REST API, round-robin selection, retry/failover
 ///
 /// Phase 3 (planned): Hedera Token Service (HTS)
 ///   - TokenCreateTransaction, TokenMintTransaction
@@ -103,6 +107,17 @@ Future<void> main() async {
 
   // AccountBalanceQuery, AccountInfoQuery.
   await queryExamples();
+
+  // Multi-node load balancing: verifies the dynamic node list from
+  // the Mirror Node REST API and round-robin selection.
+  // Requires live network access to the Mirror Node.
+  await nodeSelectionCheck();
+
+  // Retry/failover: verifies RetryPolicy behavior across 4 scenarios
+  // (transient recovery, exhausted attempts, non-retryable business
+  // errors, pre-signed same-node retry). Fully local, no network
+  // calls required.
+  await retryBehaviorCheck();
 
   // NOTE: quick_start_example.dart and account_lifecycle_example.dart
   // require HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
