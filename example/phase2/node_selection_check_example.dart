@@ -8,7 +8,7 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 /// the dynamic node list (fetched from the Mirror Node REST API) and
 /// the round-robin selection are both working correctly.
 ///
-/// This is not an automated test — it depends on live network access
+/// This is not an automated test - it depends on live network access
 /// to the Hedera testnet Mirror Node. Run it manually when you want
 /// to double check node selection behavior, for example after
 /// touching `HederaClient._getNodeList()` or `selectNode()`.
@@ -17,7 +17,7 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 /// ```dart
 /// dart run example/phase2/node_selection_check.dart
 /// ```
-Future<void> main() async {
+Future<void> nodeSelectionCheck() async {
   final client = HederaClient.forTestnet();
 
   print('=== Node Selection Check (v0.1.3-dev) ===\n');
@@ -62,3 +62,9 @@ Future<void> main() async {
 
   print('=== Check complete ===\n');
 }
+
+/// Allows running this file standalone:
+/// ```sh
+/// dart run example/phase2/node_selection_check_example.dart
+/// ```
+Future<void> main() async => nodeSelectionCheck();
