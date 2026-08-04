@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart' as crypto;
 import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
+import 'package:hedera_flutter_sdk/src/crypto/hedera_key.dart';
+import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart' as proto;
 import 'package:pointycastle/export.dart' as pc;
 
 /// Represents a Hedera public key derived from a PrivateKey.
@@ -19,7 +21,7 @@ import 'package:pointycastle/export.dart' as pc;
 ///   signature: signature,
 /// );
 /// ```
-class PublicKey {
+class PublicKey implements HederaKey {
   PublicKey._(this._keyBytes, this.type);
 
   // ---- Constructors ----
@@ -232,6 +234,19 @@ class PublicKey {
 
   static String _bytesToHex(Uint8List bytes) {
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
+
+  /// Converts this key to its Protobuf [proto.Key] representation.
+  ///
+  /// Example:
+  /// ```dart
+  /// final key = publicKey.toProtoKey();
+  /// ```
+  @override
+  proto.Key toProtoKey() {
+    return type == PublicKeyType.ed25519
+        ? proto.Key(ed25519: bytes)
+        : proto.Key(eCDSASecp256k1: bytes);
   }
 }
 
