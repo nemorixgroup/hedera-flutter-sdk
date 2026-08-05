@@ -1,9 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:hedera_flutter_sdk/src/crypto/hedera_key.dart';
 import 'package:hedera_flutter_sdk/src/crypto/public_key.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
-import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_create.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
@@ -21,7 +21,7 @@ import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 /// Example:
 /// ```dart
 /// final response = await AccountCreateTransaction()
-///     .setKey(publicKey)
+///     .setKey(HederaKey)
 ///     .setInitialBalance(Hbar(10))
 ///     .setMemo('NemorixPay wallet')
 ///     .execute(client);
@@ -36,7 +36,7 @@ class AccountCreateTransaction extends Transaction<AccountCreateTransaction> {
   /// or [execute].
   AccountCreateTransaction();
 
-  PublicKey? _key;
+  HederaKey? _key;
   Hbar _initialBalance = Hbar.zero;
   int? _maxAutomaticTokenAssociations;
   bool _receiverSigRequired = false;
@@ -49,9 +49,9 @@ class AccountCreateTransaction extends Transaction<AccountCreateTransaction> {
   ///
   /// Example:
   /// ```dart
-  /// transaction.setKey(publicKey);
+  /// transaction.setKey(HederaKey);
   /// ```
-  AccountCreateTransaction setKey(PublicKey key) {
+  AccountCreateTransaction setKey(HederaKey key) {
     _key = key;
     return this;
   }
@@ -103,7 +103,7 @@ class AccountCreateTransaction extends Transaction<AccountCreateTransaction> {
   // ---- Getters ----
 
   /// The key that will control the new account.
-  PublicKey? get key => _key;
+  HederaKey? get key => _key;
 
   /// The initial HBAR balance for the new account.
   Hbar get initialBalance => _initialBalance;
@@ -126,7 +126,7 @@ class AccountCreateTransaction extends Transaction<AccountCreateTransaction> {
     }
 
     final body = CryptoCreateTransactionBody(
-      key: Key(ed25519: _key!.bytes),
+      key: _key!.toProtoKey(),
       initialBalance: Int64(_initialBalance.toTinybars()),
       memo: memo,
       receiverSigRequired: _receiverSigRequired,
@@ -157,7 +157,7 @@ class AccountCreateTransaction extends Transaction<AccountCreateTransaction> {
     }
 
     final cryptoBody = CryptoCreateTransactionBody(
-      key: Key(ed25519: _key!.bytes),
+      key: _key!.toProtoKey(),
       initialBalance: Int64(_initialBalance.toTinybars()),
       memo: memo,
       receiverSigRequired: _receiverSigRequired,

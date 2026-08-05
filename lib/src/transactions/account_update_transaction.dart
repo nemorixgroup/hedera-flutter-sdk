@@ -1,9 +1,7 @@
 import 'dart:typed_data';
 
-// import 'package:fixnum/fixnum.dart';
-import 'package:hedera_flutter_sdk/src/crypto/public_key.dart';
+import 'package:hedera_flutter_sdk/src/crypto/hedera_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
-import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_update.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
@@ -30,7 +28,7 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
   AccountUpdateTransaction();
 
   AccountId? _accountIdToUpdate;
-  PublicKey? _key;
+  HederaKey? _key;
   String? _newMemo;
   bool? _receiverSigRequired;
   int? _maxAutomaticTokenAssociations;
@@ -56,9 +54,9 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
   ///
   /// Example:
   /// ```dart
-  /// transaction.setKey(newPublicKey);
+  /// transaction.setKey(HederaKey);
   /// ```
-  AccountUpdateTransaction setKey(PublicKey key) {
+  AccountUpdateTransaction setKey(HederaKey key) {
     _key = key;
     return this;
   }
@@ -112,7 +110,7 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
   AccountId? get accountIdToUpdate => _accountIdToUpdate;
 
   /// The new key to set; or null if unchanged.
-  PublicKey? get key => _key;
+  HederaKey? get key => _key;
 
   /// The new memo to set; or null if unchanged.
   String? get newMemo => _newMemo;
@@ -147,7 +145,7 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
     );
 
     if (_key != null) {
-      body.key = Key(ed25519: _key!.bytes);
+      body.key = _key!.toProtoKey();
     }
 
     if (_newMemo != null) {
@@ -193,7 +191,7 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
     );
 
     if (_key != null) {
-      updateBody.key = Key(ed25519: _key!.bytes);
+      updateBody.key = _key!.toProtoKey();
     }
 
     if (_newMemo != null) {
