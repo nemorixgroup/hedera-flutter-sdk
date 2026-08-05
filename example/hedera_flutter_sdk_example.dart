@@ -1,3 +1,4 @@
+import 'phase2/multi_sig_example.dart';
 import 'phase2/node_selection_check_example.dart';
 import 'phase2/private_key_example.dart';
 import 'phase2/public_key_example.dart';
@@ -31,6 +32,22 @@ import 'phase2/wallet_example.dart';
 /// set HEDERA_OPERATOR_KEY=302e...
 /// ```
 ///
+/// NOTE: quick_start_example.dart and account_lifecycle_example.dart
+/// require HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+/// Run them separately:
+///   dart run example/phase2/quick_start_example.dart
+///   dart run example/phase2/account_lifecycle_example.dart
+///
+/// Windows (PowerShell):
+///   $env:HEDERA_OPERATOR_ID = "0.0.XXXXX"
+///   $env:HEDERA_OPERATOR_KEY = "302e..."
+///   dart run example/phase2/account_lifecycle_example.dart
+///
+/// macOS / Linux:
+///   export HEDERA_OPERATOR_ID="0.0.XXXXX"
+///   export HEDERA_OPERATOR_KEY="302e..."
+///   dart run example/phase2/account_lifecycle_example.dart
+/// 
 /// ---------------------------------------------------------------------------
 /// QUICK START (recommended for new developers)
 /// ---------------------------------------------------------------------------
@@ -118,6 +135,13 @@ Future<void> main() async {
   // errors, pre-signed same-node retry). Fully local, no network
   // calls required.
   await retryBehaviorCheck();
+
+  // Demonstrates a 2-of-3 multi-signature account (v0.1.4-dev).
+  // Creates a Hedera account controlled by a HederaThresholdKey
+  // requiring 2 of 3 possible signers, then transfers HBAR out of
+  // that account using signatures from exactly 2 of the 3 keys.
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await multiSigExample();
 
   // NOTE: quick_start_example.dart and account_lifecycle_example.dart
   // require HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
