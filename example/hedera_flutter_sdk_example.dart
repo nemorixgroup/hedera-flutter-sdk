@@ -47,7 +47,7 @@ import 'phase2/wallet_example.dart';
 ///   export HEDERA_OPERATOR_ID="0.0.XXXXX"
 ///   export HEDERA_OPERATOR_KEY="302e..."
 ///   dart run example/phase2/account_lifecycle_example.dart
-/// 
+///
 /// ---------------------------------------------------------------------------
 /// QUICK START (recommended for new developers)
 /// ---------------------------------------------------------------------------
