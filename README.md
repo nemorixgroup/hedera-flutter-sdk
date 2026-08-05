@@ -4,7 +4,7 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-teal.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Dart](https://img.shields.io/badge/Dart-3.x-teal.svg)](https://dart.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.x-blue.svg)](https://flutter.dev)
-[![Status](https://img.shields.io/badge/Status-Phase%202%20In%20Progress-blue.svg)]()
+[![Status](https://img.shields.io/badge/Status-Phase%203%20In%20Progress-blue.svg)]()
 
 **The first native Flutter/Dart SDK for the [Hedera](https://hedera.com) network.**  
 Pure Dart · No platform channels · Apache 2.0
@@ -16,8 +16,8 @@ This SDK is currently in **active development** by [Nemorix Group](https://nemor
 | Phase | Description | Status |
 |:------|:------------|:------:|
 | 1 | Architecture + Protobuf | ✅ Completed |
-| 2 | Crypto + Accounts | 🔄 Near Complete |
-| 3 | HTS Tokens + NFTs | ⏳ Pending |
+| 2 | Crypto + Accounts | ✅ Completed |
+| 3 | HTS Tokens + NFTs | 🔄 Next |
 | 4 | Mirror Node + HCS | ⏳ Pending |
 | 5 | Docs + pub.dev v1.0 | ⏳ Pending |
 | 6 | Launch + HIP | ⏳ Pending |
@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.1.3-dev
+  hedera_flutter_sdk: ^0.1.4-dev
 ```
 
 ## Quick Guide
@@ -163,7 +163,7 @@ final isValid = await publicKey.verify(
 print(isValid); // true
 ```
 
-## Current Features (v0.1.3-dev)
+## Current Features (v0.1.4-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -211,10 +211,12 @@ print(isValid); // true
   REST API with round-robin selection (`HederaClient.selectNode()`)
 - Retry/failover: configurable `RetryPolicy` for transient node
   failures, with automatic failover to a new node when safe
+- Multi-signature accounts: `HederaKeyList` (N-of-N) and
+  `HederaThresholdKey` (M-of-N threshold), usable as the account key
+  in `AccountCreateTransaction`/`AccountUpdateTransaction`
 
 ## Planned Features
 
-- Multi-signature: `KeyList` with M-of-N threshold
 - Hedera Token Service (HTS): fungible tokens, NFTs, native KYC
 - Mirror Node REST client with real-time WebSocket subscriptions
 - Hedera Consensus Service (HCS)
