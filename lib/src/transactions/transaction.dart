@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_client.dart';
+import 'package:hedera_flutter_sdk/src/client/hedera_node.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_status_code.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_status_exception.dart';
@@ -81,8 +82,6 @@ abstract class Transaction<T extends Transaction<T>> {
   /// If null, a new ID is generated during [execute].
   TransactionId? _transactionId;
 
-  /// The map of public key hex strings to their signatures.
-  // final Map<String, List<int>> _signatures;
   /// The map of public key hex strings to their (signature, key type) pairs.
   final Map<String, ({List<int> signature, PublicKeyType type})> _signatures;
 
@@ -285,14 +284,20 @@ abstract class Transaction<T extends Transaction<T>> {
   /// `body.cryptoCreateAccount = ...`.
   void applyToBody(hedera_transaction.TransactionBody body);
 
+  /// The node resolved for the current [_builtBodyBytes], kept in
+  /// sync so the gRPC channel used in [_executeOnce] always matches
+  /// the `nodeAccountID` embedded in the transaction body.
+  HederaNode? _resolvedNode;
+
   /// Builds a complete [hedera_transaction.TransactionBody] for this
   /// transaction, including the transaction ID, node account ID,
   /// transaction fee, valid duration, memo, and the specific body
   /// fields set by [applyToBody].
   ///
   /// The operator account ID from [client] is used to generate the
-  /// transaction ID. If no node account ID is set, defaults to
-  /// `0.0.3` (Hedera testnet node).
+  /// transaction ID. If no node account ID is set, a node is chosen
+  /// via [HederaClient.resolveNode] (round-robin over the live node
+  /// list, or the explicit [nodeAccountId] if one was set).
   ///
   /// Throws [ArgumentError] if the client has no operator account ID.
   Future<hedera_transaction.TransactionBody> buildBody(
@@ -306,8 +311,10 @@ abstract class Transaction<T extends Transaction<T>> {
       );
     }
 
-    final resolvedNodeAccountId =
-        nodeAccountId ?? (await client.selectNode()).accountId;
+    final resolvedNode = await client.resolveNode(
+      explicitNodeAccountId: nodeAccountId,
+    );
+    _resolvedNode = resolvedNode;
 
     final now = DateTime.now();
     final seconds = now.millisecondsSinceEpoch ~/ 1000;
@@ -320,7 +327,7 @@ abstract class Transaction<T extends Transaction<T>> {
           nanos: nanos,
         ),
       ),
-      nodeAccountID: resolvedNodeAccountId.toProto(),
+      nodeAccountID: resolvedNode.accountId.toProto(),
       transactionFee: Int64(maxTransactionFee.toTinybars()),
       transactionValidDuration: hedera_duration.Duration(
         seconds: Int64(validDuration),
@@ -436,6 +443,7 @@ abstract class Transaction<T extends Transaction<T>> {
         // cannot re-sign with a key we no longer have.
         if (!wasPreSigned) {
           _builtBodyBytes = null;
+          _resolvedNode = null;
           _signatures.clear();
         }
 
@@ -446,7 +454,9 @@ abstract class Transaction<T extends Transaction<T>> {
   }
 
   /// Performs a single execution attempt: builds (or reuses) the
-  /// signed transaction and submits it via gRPC.
+  /// signed transaction and submits it via gRPC to the specific node
+  /// resolved in [buildBody], so `nodeAccountID` always matches the
+  /// physical connection used to submit the transaction.
   Future<TransactionResponse> _executeOnce(HederaClient client) async {
     // 1. Build complete TransactionBody
     final bodyBytes = await _buildBodyBytes(client);
@@ -486,8 +496,18 @@ abstract class Transaction<T extends Transaction<T>> {
       signedTransactionBytes: signedTx.writeToBuffer(),
     );
 
-    // 4. Execute and check precheck code
-    final grpcResponse = await executeGrpc(client.cryptoClient, grpcTx);
+    // 4. Execute against the specific resolved node (not the generic
+    // default channel), so nodeAccountID matches the physical
+    // connection actually used to submit the transaction.
+    final node = _resolvedNode!;
+    final channel = client.channelFor(node);
+    hedera_response.TransactionResponse grpcResponse;
+    try {
+      final cryptoClient = CryptoServiceClient(channel);
+      grpcResponse = await executeGrpc(cryptoClient, grpcTx);
+    } finally {
+      await channel.shutdown();
+    }
 
     final precheckCode = grpcResponse.nodeTransactionPrecheckCode;
     if (precheckCode != ResponseCodeEnum.OK) {

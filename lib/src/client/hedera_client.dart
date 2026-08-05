@@ -52,21 +52,6 @@ class HederaClient {
   /// The operator private key; signs transactions.
   PrivateKey? _operatorPrivateKey;
 
-  // -------------------------------------
-  /// The retry policy for transient node/network failures.
-  /// Defaults to [RetryPolicy] with standard settings.
-  RetryPolicy _retryPolicy = const RetryPolicy();
-
-  /// Sets the retry policy for this client.
-  HederaClient setRetryPolicy(RetryPolicy policy) {
-    _retryPolicy = policy;
-    return this;
-  }
-
-  /// The active retry policy.
-  RetryPolicy get retryPolicy => _retryPolicy;
-  // -------------------------------------
-
   /// Maximum fee the client will pay for a single transaction.
   /// Defaults to 2 HBAR.
   Hbar _maxTransactionFee = Hbar.fromTinybars(
@@ -78,6 +63,10 @@ class HederaClient {
   Hbar _maxQueryPayment = Hbar.fromTinybars(
     HederaConstants.defaultMaxQueryPaymentTinybars,
   );
+
+  /// The retry policy for transient node/network failures.
+  /// Defaults to [RetryPolicy] with standard settings.
+  RetryPolicy _retryPolicy = const RetryPolicy();
 
   /// Sets the operator account and key for this client.
   ///
@@ -112,6 +101,15 @@ class HederaClient {
     _maxQueryPayment = payment;
     return this;
   }
+
+  /// Sets the retry policy for this client.
+  HederaClient setRetryPolicy(RetryPolicy policy) {
+    _retryPolicy = policy;
+    return this;
+  }
+
+  /// The active retry policy.
+  RetryPolicy get retryPolicy => _retryPolicy;
 
   /// The operator account ID, or null if not set.
   AccountId? get operatorAccountId => _operatorAccountId;
@@ -151,6 +149,11 @@ class HederaClient {
   ///
   /// Uses insecure connection (port 50211) for testnet and previewnet,
   /// and TLS (port 50212) for mainnet to ensure production security.
+  ///
+  /// Note: this connects to a single generic network hostname, not
+  /// to a specific node. Use [channelFor] when the connection must
+  /// match a specific [HederaNode] (e.g. the node resolved by
+  /// [resolveNode] for a transaction).
   ClientChannel get channel {
     _channel ??= ClientChannel(
       _nodeEndpoint,
@@ -166,7 +169,8 @@ class HederaClient {
     return _channel!;
   }
 
-  /// Returns a [CryptoServiceClient] for account and transfer operations.
+  /// Returns a [CryptoServiceClient] for account and transfer operations,
+  /// connected via the generic [channel].
   ///
   /// Example:
   /// ```dart
@@ -184,6 +188,33 @@ class HederaClient {
       case HederaNetwork.previewnet:
         return HederaConstants.previewnetNodeEndpoint;
     }
+  }
+
+  /// Creates a new [ClientChannel] connected to [node]'s specific
+  /// endpoint.
+  ///
+  /// Unlike [channel] (a single cached connection to the generic
+  /// network hostname), this ensures the gRPC connection actually
+  /// reaches the same physical node declared as `nodeAccountID` in
+  /// a transaction body, avoiding `INVALID_NODE_ACCOUNT` rejections
+  /// when [selectNode] rotates to a different node.
+  ///
+  /// A new channel is created for each call (not cached); the caller
+  /// is responsible for calling `shutdown()` on the returned channel
+  /// once done with it.
+  ClientChannel channelFor(HederaNode node) {
+    final parts = node.endpoint.split(':');
+    final host = parts[0];
+    final port = int.parse(parts[1]);
+    return ClientChannel(
+      host,
+      port: port,
+      options: ChannelOptions(
+        credentials: network == HederaNetwork.mainnet
+            ? const ChannelCredentials.secure()
+            : const ChannelCredentials.insecure(),
+      ),
+    );
   }
 
   /// Closes the gRPC channel and releases resources.
@@ -318,5 +349,34 @@ class HederaClient {
     final node = nodes[_nodeIndex % nodes.length];
     _nodeIndex++;
     return node;
+  }
+
+  /// Resolves the [HederaNode] to submit a transaction to.
+  ///
+  /// If [explicitNodeAccountId] is provided (from
+  /// `Transaction.setNodeAccountId`), looks it up in the fetched
+  /// node list to find its real endpoint; falls back to the client's
+  /// generic [networkEndpoint] if that node isn't found in the list.
+  /// Otherwise, delegates to [selectNode] for round-robin selection.
+  ///
+  /// The returned node's endpoint should be used with [channelFor]
+  /// to ensure the gRPC connection matches the `nodeAccountID`
+  /// embedded in the transaction body.
+  Future<HederaNode> resolveNode({AccountId? explicitNodeAccountId}) async {
+    if (explicitNodeAccountId == null) {
+      return selectNode();
+    }
+
+    final nodes = await _getNodeList();
+    for (final node in nodes) {
+      if (node.accountId.toString() == explicitNodeAccountId.toString()) {
+        return node;
+      }
+    }
+
+    return HederaNode(
+      accountId: explicitNodeAccountId,
+      endpoint: networkEndpoint,
+    );
   }
 }

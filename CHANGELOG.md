@@ -5,6 +5,74 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.4-dev
+
+Phase 2 extension: multi-signature accounts, plus a critical
+node-routing fix carried over from v0.1.3-dev.
+
+### Added
+
+- `HederaKey`: interface for anything that can serve as a Hedera
+  account's authorization key (`lib/src/crypto/hedera_key.dart`)
+  - `toProtoKey()`: converts to the Protobuf `Key` representation
+- `PublicKey` now implements `HederaKey`
+- `HederaKeyList`: N-of-N key list, requiring all keys to sign
+  (`lib/src/crypto/hedera_key_list.dart`); supports nested
+  `HederaKeyList`/`HederaThresholdKey` entries
+- `HederaThresholdKey`: M-of-N threshold key, requiring at least
+  `threshold` of `keys` to sign; validates `threshold` is between 1
+  and `keys.length` at construction; supports nesting
+- `AccountCreateTransaction.setKey()` and
+  `AccountUpdateTransaction.setKey()` now accept any `HederaKey`
+  (a single `PublicKey`, `HederaKeyList`, or `HederaThresholdKey`),
+  not only a single `PublicKey`
+- `HederaClient.channelFor(HederaNode)`: creates a gRPC channel
+  connected to a specific node's endpoint
+- `HederaClient.resolveNode()`: resolves the node for a transaction,
+  either an explicit `nodeAccountId` (looked up in the live node
+  list) or via `selectNode()` round-robin
+- `example/phase2/multi_sig_example.dart`: end-to-end 2-of-3
+  multi-signature example (create account, sign with 2 of 3 keys,
+  execute a transfer)
+- 26 new unit tests: `hedera_key_test.dart` (25 tests) plus updates
+  to `AccountCreateTransaction`/`AccountUpdateTransaction` coverage
+- 502 total unit tests passing
+
+### Fixed
+
+- **Critical**: fixed `INVALID_NODE_ACCOUNT` errors introduced in
+  v0.1.3-dev. `HederaClient.selectNode()`'s round-robin wrote a
+  dynamic `nodeAccountID` into each `TransactionBody`, but the gRPC
+  connection used to submit it (`HederaClient.channel`) always
+  connected to a single static generic hostname, regardless of which
+  node was selected. When the selected node didn't match whichever
+  node the static connection actually reached, the network rejected
+  the transaction. This affected `Transaction.execute()` calls
+  intermittently, not only multi-signature transactions. Fixed by
+  connecting via `HederaClient.channelFor()` to the specific node
+  resolved for each transaction attempt, including on retry/failover.
+- `PublicKey.toProtoKey()` (via the new `HederaKey` interface) now
+  correctly uses the `eCDSASecp256k1` Protobuf field for ECDSA keys;
+  previously, `AccountCreateTransaction`/`AccountUpdateTransaction`
+  always hardcoded the `ed25519` field, silently mis-encoding ECDSA
+  account keys
+
+### Verified
+
+- 2-of-3 multi-signature account created and used end-to-end on
+  Hedera testnet: account creation, signing a transfer with exactly
+  2 of 3 keys, and successful execution, all confirmed live (see
+  `example/phase2/multi_sig_example.dart`)
+- `INVALID_NODE_ACCOUNT` fix confirmed by the same live run
+
+### Status
+
+Phase 2 extension complete: multi-signature account support
+(`HederaKeyList`/`HederaThresholdKey`) implemented and verified live
+on testnet; the v0.1.3-dev node-routing bug is resolved.  
+Not ready for production use.  
+Next: Phase 3 - Hedera Token Service (HTS) (v0.2.0-dev).  
+
 ## 0.1.3-dev
 
 Phase 2 extension: multi-node load balancing with retry/failover.

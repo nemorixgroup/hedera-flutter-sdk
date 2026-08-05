@@ -26,6 +26,8 @@ export 'src/core/hedera_status_code.dart';
 export 'src/core/hedera_status_exception.dart';
 
 // Crypto
+export 'src/crypto/hedera_key.dart';
+export 'src/crypto/hedera_key_list.dart';
 export 'src/crypto/mnemonic.dart';
 export 'src/crypto/private_key.dart';
 export 'src/crypto/public_key.dart';
