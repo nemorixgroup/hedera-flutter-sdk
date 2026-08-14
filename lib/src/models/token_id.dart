@@ -1,3 +1,5 @@
+import 'package:fixnum/fixnum.dart';
+import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:meta/meta.dart';
 
 /// Represents a Hedera token identifier in the format shard.realm.num.
@@ -65,4 +67,13 @@ class TokenId {
 
   @override
   int get hashCode => Object.hash(shardNum, realmNum, tokenNum);
+
+  /// Converts this [TokenId] to its Protobuf [TokenID] representation.
+  TokenID toProto() {
+    return TokenID(
+      shardNum: Int64(shardNum),
+      realmNum: Int64(realmNum),
+      tokenNum: Int64(tokenNum),
+    );
+  }
 }
