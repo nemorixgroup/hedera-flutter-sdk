@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:grpc/grpc.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 import 'package:hedera_flutter_sdk/src/client/retry_policy.dart';
-import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
     as hedera_response;
@@ -34,7 +33,7 @@ class _FlakyTestTransaction extends Transaction<_FlakyTestTransaction> {
 
   @override
   Future<hedera_response.TransactionResponse> executeGrpc(
-    CryptoServiceClient cryptoClient,
+    ClientChannel channel,
     hedera_tx.Transaction tx,
   ) async {
     callCount++;

@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:grpc/grpc.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
-import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/proto/transaction_contents.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
@@ -20,7 +20,7 @@ class _TestTransaction extends Transaction<_TestTransaction> {
   /// No-op implementation for testing purposes.
   @override
   Future<hedera_response.TransactionResponse> executeGrpc(
-    CryptoServiceClient cryptoClient,
+    ClientChannel channel,
     hedera_tx.Transaction tx,
   ) async {
     return hedera_response.TransactionResponse();
