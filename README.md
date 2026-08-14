@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.1.4-dev
+  hedera_flutter_sdk: ^0.2.0-dev
 ```
 
 ## Quick Guide
@@ -163,7 +163,29 @@ final isValid = await publicKey.verify(
 print(isValid); // true
 ```
 
-## Current Features (v0.1.4-dev)
+### Tokens (Phase 3)
+
+#### Create a fungible token
+
+```dart
+// Treasury key must sign, since it receives the initial supply
+final tokenCreateTx = TokenCreateTransaction()
+    .setTokenName('USD Bar')
+    .setTokenSymbol('USDB')
+    .setDecimals(2)
+    .setInitialSupply(10000) // 100.00 USDB
+    .setTreasuryAccountId(treasuryAccountId)
+    .setSupplyKey(supplyPublicKey) // required to mint/burn later
+    .setMaxTransactionFee(Hbar(30)); // token creation costs more than account creation
+
+await tokenCreateTx.signWith(treasuryPrivateKey, client);
+final response = await tokenCreateTx.execute(client);
+
+final receipt = await response.getReceipt(client);
+print(receipt.tokenId); // 0.0.123456
+```
+
+## Current Features (v0.2.0-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -214,6 +236,10 @@ print(isValid); // true
 - Multi-signature accounts: `HederaKeyList` (N-of-N) and
   `HederaThresholdKey` (M-of-N threshold), usable as the account key
   in `AccountCreateTransaction`/`AccountUpdateTransaction`
+- `TokenCreateTransaction`: creates fungible or non-fungible tokens
+  on the Hedera Token Service (HTS), with all 22 token properties
+  (name, symbol, supply, decimals, treasury, and all token keys -
+  admin, KYC, freeze, wipe, supply, pause, fee schedule, metadata)
 
 ## Planned Features
 
