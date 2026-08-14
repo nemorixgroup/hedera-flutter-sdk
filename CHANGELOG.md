@@ -5,6 +5,73 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.0-dev
+
+Phase 3 begins: Hedera Token Service (HTS), fungible token creation.
+
+### Added
+
+- `TokenCreateTransaction`: creates a new fungible or non-fungible
+  token, with all 22 fields from the official token creation
+  reference
+  - Required: `tokenName`, `tokenSymbol`, `treasuryAccountId`
+  - Optional: `decimals`, `initialSupply`, `adminKey`, `kycKey`,
+    `freezeKey`, `wipeKey`, `supplyKey`, `pauseKey`,
+    `feeScheduleKey`, `metadataKey`, `freezeDefault`,
+    `expirationTime`, `autoRenewAccountId`, `autoRenewPeriod`,
+    `tokenMemo`, `tokenType`, `supplyType`, `maxSupply`, `metadata`
+  - Token keys accept any `HederaKey` (a single `PublicKey`,
+    `HederaKeyList`, or `HederaThresholdKey`), enabling multi-sig
+    control over token administration
+- `TokenId.toProto()`: converts to the Protobuf `TokenID`
+  representation, following the same pattern as `AccountId.toProto()`
+- `example/phase3/token_create_example.dart`: end-to-end example
+  creating a treasury account and a fungible token ("USD Bar" /
+  USDB) with a supply key
+- 66 new unit tests: `token_create_transaction_test.dart`, covering
+  defaults, setters, `toBytes()` serialization for all 22 fields
+  (including a `HederaThresholdKey` as a token key), and
+  `buildBody()` integration
+- 566 total unit tests passing
+
+### Changed
+
+- **BREAKING**: `Transaction.executeGrpc()` now receives a raw
+  `ClientChannel` instead of a pre-built `CryptoServiceClient`; each
+  subclass constructs the specific gRPC service client it needs
+  (`CryptoServiceClient` for account/HBAR transactions,
+  `TokenServiceClient` for token transactions). Updated
+  `AccountCreateTransaction`, `AccountUpdateTransaction`,
+  `AccountDeleteTransaction`, and `CryptoTransferTransaction`
+  accordingly. This unblocks token transactions now and Hedera
+  Consensus Service (HCS) transactions in a future phase.
+
+### Fixed
+
+- `PublicKey.toProtoKey()` (via `HederaKey`) now correctly encodes
+  ECDSA keys with the `eCDSASecp256k1` Protobuf field; previously
+  affected token admin/supply/etc. keys the same way it had
+  previously affected account keys before the v0.1.4-dev fix
+
+### Verified
+
+- Live on Hedera testnet: created a treasury account, generated a
+  supply key, and created a fungible token ("USD Bar" / USDB, 2
+  decimals, 100 initial supply) — confirmed `SUCCESS` status and
+  correct token ID via HashScan (see
+  `example/phase3/token_create_example.dart`)
+- Confirmed token creation requires a higher `maxTransactionFee`
+  than account creation (the inherited 2 HBAR default triggers
+  `INSUFFICIENT_TX_FEE`), since it includes a `CryptoTransfer` to
+  move the initial supply to the treasury per official docs
+
+### Status
+
+Phase 3 started: fungible token creation implemented and verified
+live on testnet.  
+Not ready for production use.  
+Next: account-to-token association (v0.2.1-dev).
+
 ## 0.1.4-dev
 
 Phase 2 extension: multi-signature accounts, plus a critical

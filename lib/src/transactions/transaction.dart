@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
+import 'package:grpc/grpc.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_client.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_node.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
@@ -13,7 +14,6 @@ import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
 import 'package:hedera_flutter_sdk/src/models/transaction_id.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
-import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
     as hedera_duration;
 import 'package:hedera_flutter_sdk/src/proto/query.pb.dart';
@@ -395,18 +395,20 @@ abstract class Transaction<T extends Transaction<T>> {
 
   // ---- Execution ----
 
-  /// Executes this transaction via gRPC using the given
-  /// [CryptoServiceClient].
+  /// Executes this transaction via gRPC using the given [ClientChannel].
   ///
-  /// Each subclass routes the transaction to the correct gRPC
-  /// method — for example AccountCreateTransaction calls
-  /// `client.createAccount()`.
+  /// Each subclass constructs the specific gRPC service client it needs
+  /// (for example, `CryptoServiceClient` for account/HBAR transactions,
+  /// or `TokenServiceClient` for token transactions) and routes the
+  /// transaction to the correct method — for example
+  /// AccountCreateTransaction calls `CryptoServiceClient(channel)
+  /// .createAccount()`.
   ///
   /// Throws [HederaStatusException] if the node returns a
   /// non-OK precheck code.
   /// Returns the [TransactionResponse] Protobuf from the node.
   Future<hedera_response.TransactionResponse> executeGrpc(
-    CryptoServiceClient cryptoClient,
+    ClientChannel channel,
     hedera_transaction.Transaction tx,
   );
 
@@ -503,8 +505,7 @@ abstract class Transaction<T extends Transaction<T>> {
     final channel = client.channelFor(node);
     hedera_response.TransactionResponse grpcResponse;
     try {
-      final cryptoClient = CryptoServiceClient(channel);
-      grpcResponse = await executeGrpc(cryptoClient, grpcTx);
+      grpcResponse = await executeGrpc(channel, grpcTx);
     } finally {
       await channel.shutdown();
     }
