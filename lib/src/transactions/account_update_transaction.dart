@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:grpc/grpc.dart';
 import 'package:hedera_flutter_sdk/src/crypto/hedera_key.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_service.pbgrpc.dart';
@@ -216,9 +217,9 @@ class AccountUpdateTransaction extends Transaction<AccountUpdateTransaction> {
   /// Executes this transaction via the updateAccount gRPC method.
   @override
   Future<hedera_response.TransactionResponse> executeGrpc(
-    CryptoServiceClient cryptoClient,
+    ClientChannel channel,
     hedera_tx.Transaction tx,
   ) async {
-    return await cryptoClient.updateAccount(tx);
+    return await CryptoServiceClient(channel).updateAccount(tx);
   }
 }
