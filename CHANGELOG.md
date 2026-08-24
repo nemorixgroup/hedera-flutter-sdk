@@ -5,6 +5,61 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.1-dev
+
+Phase 3 continues: account-to-token association.
+
+### Added
+
+- `TokenAssociateTransaction`: associates an account with one or more
+  HTS tokens, required before that account can send or receive them
+  - `setAccountId()` (required), `addTokenId()` (required, at least
+    one; can be called multiple times)
+- `TokenDissociateTransaction`: dissociates an account from one or
+  more HTS tokens; the account MUST have a zero balance of each
+  token or the transaction resolves to
+  `TRANSACTION_REQUIRES_ZERO_TOKEN_BALANCES`
+  - `setAccountId()` (required), `addTokenId()` (required, at least
+    one; can be called multiple times)
+- `example/phase3/token_associate_example.dart`: end-to-end example
+  creating a token, creating an unassociated account, associating it,
+  then dissociating it
+- 34 new unit tests: `token_associate_transaction_test.dart` and
+  `token_dissociate_transaction_test.dart` (defaults, setters,
+  `toBytes()` serialization, `buildBody()` integration confirming
+  `tokenAssociate`/`tokenDissociate` oneof routing)
+- 600 total unit tests passing
+
+### Notes
+
+- Official docs list a `setHighVolume()` property (HIP-1313) for
+  `TokenAssociateTransaction`. Regenerating the SDK's Protobuf
+  definitions did not surface a corresponding field on
+  `TokenAssociateTransactionBody`, and the actively maintained
+  `hiero-ledger/hiero-sdk-java` reference implementation does not
+  reference one either. This is left out of the SDK for now and
+  will be revisited once confirmed on the Protobuf side.
+
+## Official References
+
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/associate-tokens-to-an-account
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/dissociate-tokens-from-an-account
+
+### Verified
+
+Live on Hedera testnet: created a treasury account and a fungible
+token, created a second unassociated account, associated it with the
+token (`SUCCESS`), then dissociated it with a zero balance
+(`SUCCESS`). No `maxTransactionFee` override was needed, unlike
+`TokenCreateTransaction`.
+
+### Status
+
+Phase 3 in progress: account-to-token association implemented and
+verified live on testnet.   
+Not ready for production use.   
+Next: token transfers (v0.2.2-dev).
+
 ## 0.2.0-dev
 
 Phase 3 begins: Hedera Token Service (HTS), fungible token creation.

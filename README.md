@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.2.0-dev
+  hedera_flutter_sdk: ^0.2.1-dev
 ```
 
 ## Quick Guide
@@ -185,7 +185,7 @@ final receipt = await response.getReceipt(client);
 print(receipt.tokenId); // 0.0.123456
 ```
 
-## Current Features (v0.2.0-dev)
+## Current Features (v0.2.1-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -240,6 +240,8 @@ print(receipt.tokenId); // 0.0.123456
   on the Hedera Token Service (HTS), with all 22 token properties
   (name, symbol, supply, decimals, treasury, and all token keys -
   admin, KYC, freeze, wipe, supply, pause, fee schedule, metadata)
+- `TokenAssociateTransaction`/`TokenDissociateTransaction`: associate
+  or dissociate an account from one or more HTS tokens
 
 ## Planned Features
 
