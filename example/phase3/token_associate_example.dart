@@ -29,7 +29,7 @@ import 'package:hedera_flutter_sdk/src/transactions/token_create_transaction.dar
 ///
 /// You can get a free testnet account and HBAR at:
 /// https://portal.hedera.com
-void main() async {
+Future<void> tokenAssociateExample() async {
   // ---- Step 0: Read operator credentials ----
 
   final operatorIdStr = Platform.environment['HEDERA_OPERATOR_ID'];
@@ -204,3 +204,11 @@ void main() async {
     await client.close();
   }
 }
+
+/// Required environment variables:
+/// ```sh
+/// set HEDERA_OPERATOR_ID=0.0.XXXXX
+/// set HEDERA_OPERATOR_KEY=302e...
+/// dart run example/phase3/token_associate_example.dart
+/// ```
+Future<void> main() async => tokenAssociateExample();

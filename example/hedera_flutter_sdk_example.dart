@@ -6,6 +6,9 @@ import 'phase2/query_example.dart';
 import 'phase2/retry_behavior_check_example.dart';
 import 'phase2/transaction_example.dart';
 import 'phase2/wallet_example.dart';
+import 'phase3/token_associate_example.dart';
+import 'phase3/token_create_example.dart';
+import 'phase3/token_transfer_example.dart';
 
 /// hedera_flutter_sdk - Examples Entry Point
 ///
@@ -97,9 +100,11 @@ import 'phase2/wallet_example.dart';
 ///   - Multi-node load balancing: dynamic node list from the Mirror
 ///     Node REST API, round-robin selection, retry/failover
 ///
-/// Phase 3 (planned): Hedera Token Service (HTS)
-///   - TokenCreateTransaction, TokenMintTransaction
-///   - TokenAssociateTransaction, TokenTransferTransaction
+/// Phase 3 (v0.2.x): Hedera Token Service (HTS)
+///   - TokenCreateTransaction: fungible token creation, all 22
+///     official fields
+///   - TokenAssociateTransaction, TokenDissociateTransaction
+///   - CryptoTransferTransaction extended with addTokenTransfer()
 ///
 /// Phase 4 (planned): Hedera Consensus Service (HCS)
 ///   - TopicCreateTransaction, TopicSubmitMessageTransaction
@@ -158,4 +163,23 @@ Future<void> main() async {
   //   export HEDERA_OPERATOR_ID="0.0.XXXXX"
   //   export HEDERA_OPERATOR_KEY="302e..."
   //   dart run example/phase2/account_lifecycle_example.dart
+
+  // ---- Phase 3: Hedera Token Service (HTS) ----
+  // See: example/phase3/
+
+  // TokenCreateTransaction: creates a fungible token with a
+  // treasury account and a supply key (v0.2.0-dev).
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await tokenCreateExample();
+
+  // TokenAssociateTransaction/TokenDissociateTransaction: associates
+  // and dissociates an account from a token (v0.2.1-dev).
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await tokenAssociateExample();
+
+  // CryptoTransferTransaction extended with addTokenTransfer():
+  // transfers a fungible token between two accounts, including
+  // expectedDecimals validation (v0.2.2-dev).
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await tokenTransferExample();
 }
