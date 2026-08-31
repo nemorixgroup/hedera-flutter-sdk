@@ -5,6 +5,64 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.2-dev
+
+Phase 3 continues: fungible token transfers.
+
+### Added
+
+- `CryptoTransferTransaction.addTokenTransfer(TokenId, AccountId, int, {int? expectedDecimals})`:
+  transfers fungible tokens between accounts, in the same
+  transaction as HBAR transfers if desired
+  - `expectedDecimals` is OPTIONAL; when set, the network verifies
+    the token's actual decimals match before applying the transfer,
+    guarding against decimals changing between building and
+    executing the transaction
+- `example/phase3/token_transfer_example.dart`: end-to-end example
+  transferring a token between a treasury and a second account,
+  including a correct `expectedDecimals` usage and a local error case
+- 18 new unit tests in `crypto_transfer_transaction_test.dart`
+  (setters, per-token sum-to-zero validation, `expectedDecimals`
+  conflict detection, serialization, `buildBody()` integration)
+
+### Notes
+
+- Hedera has no separate token transfer transaction type; all
+  transfers (HBAR, fungible tokens, NFTs) use the same
+  `CryptoTransferTransaction`/`TransferTransaction`. This version
+  extends the SDK's existing class rather than introducing a new one.
+- `expectedDecimals` is tied to the whole set of transfers for a
+  given token, not to each individual transfer entry. If
+  `addTokenTransfer()` is called multiple times for the same token
+  with conflicting non-null `expectedDecimals` values, the SDK
+  throws `ArgumentError` locally rather than silently picking one.
+  No official guidance was found for this specific edge case; this
+  is a deliberately conservative choice.
+- NFT transfers (`addNftTransfer()`) are deferred to v0.2.4-dev.
+- While building the live example, found that `AccountBalanceQuery`
+  (from Phase 2) only exposes HBAR balance, not per-token balances.
+  Extending it is planned for v0.2.6-dev (token queries).
+
+## Official References
+
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/transfer-tokens
+
+### Verified
+
+Live on Hedera testnet: created a treasury account and a fungible
+token, created and associated a second account (Bob), transferred
+25.00 DEMO treasury -> Bob (`SUCCESS`), 10.00 DEMO Bob -> treasury
+(`SUCCESS`), and a further 1.00 DEMO with `expectedDecimals` set
+(`SUCCESS`). Confirmed the conflicting-`expectedDecimals` case is
+caught locally, before any network call.
+
+### Status
+
+Phase 3 in progress: fungible token transfers implemented and
+verified live on testnet.   
+Not ready for production use.   
+Next: mint / burn (v0.2.3-dev).
+
 ## 0.2.1-dev
 
 Phase 3 continues: account-to-token association.
