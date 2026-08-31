@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.2.1-dev
+  hedera_flutter_sdk: ^0.2.2-dev
 ```
 
 ## Quick Guide
@@ -185,7 +185,17 @@ final receipt = await response.getReceipt(client);
 print(receipt.tokenId); // 0.0.123456
 ```
 
-## Current Features (v0.2.1-dev)
+#### Transfer a fungible token
+
+```dart
+final response = await CryptoTransferTransaction()
+    .addTokenTransfer(tokenId, senderAccountId, -100)
+    .addTokenTransfer(tokenId, receiverAccountId, 100)
+    .signWith(senderPrivateKey, client)
+    .then((tx) => tx.execute(client));
+```
+
+## Current Features (v0.2.2-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -242,6 +252,9 @@ print(receipt.tokenId); // 0.0.123456
   admin, KYC, freeze, wipe, supply, pause, fee schedule, metadata)
 - `TokenAssociateTransaction`/`TokenDissociateTransaction`: associate
   or dissociate an account from one or more HTS tokens
+- `CryptoTransferTransaction.addTokenTransfer()`: transfers fungible
+  tokens between accounts, with optional `expectedDecimals`
+  protection against decimals changing between build and execution
 
 ## Planned Features
 
