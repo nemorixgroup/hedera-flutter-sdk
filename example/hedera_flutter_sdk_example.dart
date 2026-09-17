@@ -8,6 +8,7 @@ import 'phase2/transaction_example.dart';
 import 'phase2/wallet_example.dart';
 import 'phase3/token_associate_example.dart';
 import 'phase3/token_create_example.dart';
+import 'phase3/token_mint_burn_example.dart';
 import 'phase3/token_transfer_example.dart';
 
 /// hedera_flutter_sdk - Examples Entry Point
@@ -105,6 +106,7 @@ import 'phase3/token_transfer_example.dart';
 ///     official fields
 ///   - TokenAssociateTransaction, TokenDissociateTransaction
 ///   - CryptoTransferTransaction extended with addTokenTransfer()
+///   - TokenMintTransaction, TokenBurnTransaction
 ///
 /// Phase 4 (planned): Hedera Consensus Service (HCS)
 ///   - TopicCreateTransaction, TopicSubmitMessageTransaction
@@ -182,4 +184,11 @@ Future<void> main() async {
   // expectedDecimals validation (v0.2.2-dev).
   // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
   await tokenTransferExample();
+
+  // TokenMintTransaction/TokenBurnTransaction: mints additional
+  // supply and burns part of it, using the token's supply key
+  // (v0.2.3-dev). Also verifies the transaction valid start time
+  // safety margin fix.
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await tokenMintBurnExample();
 }
