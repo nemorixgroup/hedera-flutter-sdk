@@ -3,7 +3,6 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart' as proto;
 import 'package:hedera_flutter_sdk/src/proto/token_create.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart';
-import 'package:hedera_flutter_sdk/src/transactions/token_create_transaction.dart';
 
 void main() {
   group('TokenCreateTransaction', () {
