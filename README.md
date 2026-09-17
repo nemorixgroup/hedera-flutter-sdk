@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.2.2-dev
+  hedera_flutter_sdk: ^0.2.3-dev
 ```
 
 ## Quick Guide
@@ -195,7 +195,23 @@ final response = await CryptoTransferTransaction()
     .then((tx) => tx.execute(client));
 ```
 
-## Current Features (v0.2.2-dev)
+#### Mint and burn tokens
+
+```dart
+await TokenMintTransaction()
+    .setTokenId(tokenId)
+    .setAmount(1000)
+    .signWith(supplyKey, client)
+    .then((tx) => tx.execute(client));
+
+await TokenBurnTransaction()
+    .setTokenId(tokenId)
+    .setAmount(500)
+    .signWith(supplyKey, client)
+    .then((tx) => tx.execute(client));
+```
+
+## Current Features (v0.2.3-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -255,6 +271,8 @@ final response = await CryptoTransferTransaction()
 - `CryptoTransferTransaction.addTokenTransfer()`: transfers fungible
   tokens between accounts, with optional `expectedDecimals`
   protection against decimals changing between build and execution
+- `TokenMintTransaction`/`TokenBurnTransaction`: mint or burn
+  fungible tokens (requires the token's supply key)
 
 ## Planned Features
 

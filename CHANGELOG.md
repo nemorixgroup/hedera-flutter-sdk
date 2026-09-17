@@ -5,6 +5,79 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.3-dev
+
+Phase 3 continues: mint and burn for fungible tokens.
+
+### Added
+
+- `TokenMintTransaction`: mints new fungible tokens, crediting them
+  to the token's treasury account
+  - `setTokenId()` (required), `setAmount()` (required for fungible
+    tokens, expressed in the token's smallest denomination)
+- `TokenBurnTransaction`: burns fungible tokens from the token's
+  treasury account
+  - `setTokenId()` (required), `setAmount()` (required for fungible
+    tokens, expressed in the token's smallest denomination)
+- Both require the token's supply key to sign; without one, resolve
+  to `TOKEN_HAS_NO_SUPPLY_KEY`
+- `example/phase3/token_mint_burn_example.dart`: end-to-end example
+  creating a token, minting additional supply, and burning part of it
+- 28 new unit tests: `token_mint_transaction_test.dart` and
+  `token_burn_transaction_test.dart` (defaults, setters, `toBytes()`
+  validation and serialization, `buildBody()` integration confirming
+  `tokenMint`/`tokenBurn` oneof routing)
+- 644 total unit tests passing
+
+### Changed
+
+- Reorganized token-related transaction classes into
+  `lib/src/transactions/tokens/`, with a mirrored
+  `test/unit/transactions/tokens/` folder for their tests. No public
+  API change; the SDK's barrel file (`lib/hedera_flutter_sdk.dart`)
+  export paths were the only thing updated.
+
+### Fixed
+
+- **Reliability fix affecting the whole SDK**: `Transaction.buildBody()`
+  built the transaction's valid start time from the client's clock
+  with no safety margin, which could cause intermittent
+  `INVALID_TRANSACTION_START` errors whenever a receiving consensus
+  node's clock lagged even slightly behind the client's, regardless
+  of how accurate the client's own clock was. Fixed by subtracting a
+  5-second margin when building the timestamp, matching a
+  long-standing practice in Hedera's official SDKs (see
+  hiero-ledger/hiero-sdk-java#1652). This fix applies to every
+  transaction type, not just mint/burn.
+
+### Notes
+
+- NFT support for mint (`metadata`) and burn (`serialNumbers`, note
+  the real protobuf field name differs from the documented
+  `setSerials()`) is deferred to v0.2.4-dev.
+- `setHighVolume()` (HIP-1313) is documented for
+  `TokenMintTransaction` but was not found on the actual
+  `TokenMintTransactionBody` protobuf; deferred pending confirmation,
+  same open question as v0.2.1-dev's `TokenAssociateTransaction`.
+
+## Official References
+
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/mint-a-token
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/burn-a-token
+
+### Verified
+
+Live on Hedera testnet: created a token with a supply key, minted
+50.00 DEMO (`SUCCESS`, supply 100.00 -> 150.00), then burned 30.00
+DEMO (`SUCCESS`, supply 150.00 -> 120.00), confirmed on HashScan.
+
+### Status
+
+Phase 3 in progress: mint and burn for fungible tokens implemented
+and verified live on testnet.  
+Not ready for production use.  
+Next: NFT support (v0.2.4-dev).
+
 ## 0.2.2-dev
 
 Phase 3 continues: fungible token transfers.
