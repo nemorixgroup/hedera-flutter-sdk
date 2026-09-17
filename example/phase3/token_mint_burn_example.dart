@@ -32,7 +32,7 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 ///
 /// You can get a free testnet account and HBAR at:
 /// https://portal.hedera.com
-void main() async {
+Future<void> tokenMintBurnExample() async {
   // ---- Step 0: Read operator credentials ----
 
   final operatorIdStr = Platform.environment['HEDERA_OPERATOR_ID'];
@@ -201,3 +201,9 @@ void main() async {
     await client.close();
   }
 }
+
+/// Allows running this file standalone:
+/// ```sh
+/// dart run example/phase3/token_mint_burn_example.dart
+/// ```
+Future<void> main() async => tokenMintBurnExample();
