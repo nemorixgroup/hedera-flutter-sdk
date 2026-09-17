@@ -2,8 +2,7 @@ import 'dart:typed_data';
 
 import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart';
-import 'package:hedera_flutter_sdk/src/crypto/hedera_key.dart';
-import 'package:hedera_flutter_sdk/src/models/account_id.dart';
+import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
     as hedera_duration;
@@ -14,7 +13,6 @@ import 'package:hedera_flutter_sdk/src/proto/token_service.pbgrpc.dart';
 import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
     as hedera_response;
-import 'package:hedera_flutter_sdk/src/transactions/transaction.dart';
 
 /// Creates a new fungible or non-fungible token on the Hedera network.
 ///
