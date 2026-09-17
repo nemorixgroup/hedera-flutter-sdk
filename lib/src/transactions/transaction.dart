@@ -316,7 +316,13 @@ abstract class Transaction<T extends Transaction<T>> {
     );
     _resolvedNode = resolvedNode;
 
-    final now = DateTime.now();
+    // Subtract a few seconds from the client's clock when building the
+    // valid start time. This guards against INVALID_TRANSACTION_START
+    // when the receiving node's consensus clock lags slightly behind
+    // the client's clock, even when the client clock itself is
+    // accurate. This mirrors a long-standing practice in Hedera's
+    // official SDKs.
+    final now = DateTime.now().subtract(const Duration(seconds: 5));
     final seconds = now.millisecondsSinceEpoch ~/ 1000;
     final nanos = (now.millisecondsSinceEpoch % 1000) * 1000000;
     final body = hedera_transaction.TransactionBody(

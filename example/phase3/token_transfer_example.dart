@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
-import 'package:hedera_flutter_sdk/src/transactions/token_create_transaction.dart';
 
 /// Token Transfer Example - hedera_flutter_sdk
 ///
