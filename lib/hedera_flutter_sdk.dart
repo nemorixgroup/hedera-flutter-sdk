@@ -19,6 +19,7 @@ library;
 // Client
 export 'src/client/hedera_client.dart';
 export 'src/client/hedera_network.dart';
+export 'src/client/hedera_node.dart';
 
 // Core
 export 'src/core/hedera_constants.dart';
@@ -51,6 +52,9 @@ export 'src/transactions/account_create_transaction.dart';
 export 'src/transactions/account_delete_transaction.dart';
 export 'src/transactions/account_update_transaction.dart';
 export 'src/transactions/crypto_transfer_transaction.dart';
-export 'src/transactions/token_associate_transaction.dart';
-export 'src/transactions/token_dissociate_transaction.dart';
+export 'src/transactions/tokens/token_associate_transaction.dart';
+export 'src/transactions/tokens/token_burn_transaction.dart';
+export 'src/transactions/tokens/token_create_transaction.dart';
+export 'src/transactions/tokens/token_dissociate_transaction.dart';
+export 'src/transactions/tokens/token_mint_transaction.dart';
 export 'src/transactions/transaction.dart';
