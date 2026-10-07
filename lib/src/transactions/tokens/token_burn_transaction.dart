@@ -9,21 +9,34 @@ import 'package:hedera_flutter_sdk/src/proto/transaction.pb.dart' as hedera_tx;
 import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
     as hedera_response;
 
-/// Burns fungible tokens from the token's treasury account.
+/// Burns tokens held by the token's treasury account.
+///
+/// One class covers both token types, as in the Hedera protobufs and
+/// the official SDKs. Provide EXACTLY ONE of the following:
+///
+/// - Fungible (`FUNGIBLE_COMMON`): call [setAmount]; it decreases the
+///   supply by that amount.
+/// - NFT (`NON_FUNGIBLE_UNIQUE`): call [addSerial] or [setSerials]; it
+///   burns the NFTs with those serial numbers.
+///
+/// Setting neither, or both, throws [ArgumentError].
 ///
 /// The token MUST have a supply key set; without one, this
 /// transaction resolves to `TOKEN_HAS_NO_SUPPLY_KEY`. The supply key
 /// MUST sign this transaction. Total supply cannot go below zero.
 ///
-/// [amount] is expressed in the token's smallest denomination (see
-/// `TokenCreateTransaction.setDecimals`).
+/// Fungible: [amount] is expressed in the token's smallest
+/// denomination (see `TokenCreateTransaction.setDecimals`).
 ///
-/// NFT burning (via serial numbers) is not yet supported; see
-/// v0.2.4-dev.
+/// NFT: the NFTs to burn MUST be owned by the treasury account. To
+/// burn an NFT held by another account, transfer it back to the
+/// treasury first. The network limits how many NFTs can be burned in
+/// one transaction (`tokens.nfts.maxBatchSizeBurn`); this class does
+/// not enforce that limit, the network does.
 ///
 /// See: https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/burn-a-token
 ///
-/// Example:
+/// Example (fungible):
 /// ```dart
 /// final response = await TokenBurnTransaction()
 ///     .setTokenId(tokenId)
@@ -31,12 +44,23 @@ import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
 ///     .signWith(supplyKey, client)
 ///     .then((tx) => tx.execute(client));
 /// ```
+///
+/// Example (NFT):
+/// ```dart
+/// final tx = TokenBurnTransaction()
+///     .setTokenId(tokenId)
+///     .addSerial(1)
+///     .addSerial(2);
+/// await tx.signWith(supplyKey, client);
+/// await tx.execute(client);
+/// ```
 class TokenBurnTransaction extends Transaction<TokenBurnTransaction> {
   /// Creates a new [TokenBurnTransaction] with no fields set.
   TokenBurnTransaction();
 
   TokenId? _tokenId;
   int? _amount;
+  final List<int> _serials = [];
 
   // ---- Setters (fluent API) ----
 
@@ -53,7 +77,9 @@ class TokenBurnTransaction extends Transaction<TokenBurnTransaction> {
 
   /// Sets the amount to burn, in the token's smallest denomination.
   ///
-  /// Required for fungible tokens.
+  /// Fungible tokens only. Cannot be combined with [addSerial] or
+  /// [setSerials]. Calling `setAmount(0)` is valid and is sent to the
+  /// network as an amount of 0.
   ///
   /// Example:
   /// ```dart
@@ -64,6 +90,35 @@ class TokenBurnTransaction extends Transaction<TokenBurnTransaction> {
     return this;
   }
 
+  /// Adds the serial number of one NFT to burn.
+  ///
+  /// NFT tokens only. Cannot be combined with [setAmount].
+  ///
+  /// Example:
+  /// ```dart
+  /// transaction.addSerial(3);
+  /// ```
+  TokenBurnTransaction addSerial(int serialNumber) {
+    _serials.add(serialNumber);
+    return this;
+  }
+
+  /// Replaces the whole list of NFT serial numbers to burn.
+  ///
+  /// Passing an empty list clears the serials. Cannot be combined with
+  /// [setAmount].
+  ///
+  /// Example:
+  /// ```dart
+  /// transaction.setSerials([1, 2, 3]);
+  /// ```
+  TokenBurnTransaction setSerials(List<int> serialNumbers) {
+    _serials
+      ..clear()
+      ..addAll(serialNumbers);
+    return this;
+  }
+
   // ---- Getters ----
 
   /// The token to burn, or null if not set.
@@ -71,6 +126,9 @@ class TokenBurnTransaction extends Transaction<TokenBurnTransaction> {
 
   /// The amount to burn, or null if not set.
   int? get amount => _amount;
+
+  /// The NFT serial numbers to burn (empty if none were added).
+  List<int> get serials => List.unmodifiable(_serials);
 
   // ---- Serialization ----
 
@@ -84,7 +142,8 @@ class TokenBurnTransaction extends Transaction<TokenBurnTransaction> {
 
   /// Applies the TokenBurnTransaction-specific body fields to [body].
   ///
-  /// Throws [ArgumentError] if [tokenId] or [amount] have not been set.
+  /// Throws [ArgumentError] if [tokenId] is not set, or if neither or
+  /// both of amount and serial numbers have been set.
   @override
   void applyToBody(hedera_tx.TransactionBody body) {
     body.tokenBurn = _buildTokenBurnBody();
@@ -98,17 +157,30 @@ class TokenBurnTransaction extends Transaction<TokenBurnTransaction> {
         'Call setTokenId() first.',
       );
     }
-    if (_amount == null) {
+    final hasAmount = _amount != null;
+    final hasSerials = _serials.isNotEmpty;
+    if (!hasAmount && !hasSerials) {
       throw ArgumentError(
-        'TokenBurnTransaction requires an amount for fungible tokens. '
-        'Call setAmount() first.',
+        'TokenBurnTransaction requires either amount (fungible) or '
+        'serials (NFT). Call setAmount() for a fungible token, or '
+        'addSerial() for an NFT token.',
+      );
+    }
+    if (hasAmount && hasSerials) {
+      throw ArgumentError(
+        'TokenBurnTransaction accepts either amount (fungible) or '
+        'serials (NFT), not both. Use setAmount() for a fungible '
+        'token, or addSerial() for an NFT token.',
       );
     }
 
-    return TokenBurnTransactionBody(
-      token: _tokenId!.toProto(),
-      amount: Int64(_amount!),
-    );
+    final body = TokenBurnTransactionBody(token: _tokenId!.toProto());
+    if (hasAmount) {
+      body.amount = Int64(_amount!);
+    } else {
+      body.serialNumbers.addAll(_serials.map(Int64.new));
+    }
+    return body;
   }
 
   /// Executes this transaction via the burnToken gRPC method.
