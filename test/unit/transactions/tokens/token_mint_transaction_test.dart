@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 import 'package:hedera_flutter_sdk/src/proto/token_mint.pb.dart';
@@ -16,6 +19,11 @@ void main() {
       test('amount defaults to null', () {
         final tx = TokenMintTransaction();
         expect(tx.amount, isNull);
+      });
+
+      test('metadata defaults to empty', () {
+        final tx = TokenMintTransaction();
+        expect(tx.metadata, isEmpty);
       });
     });
 
@@ -52,6 +60,36 @@ void main() {
         expect(tx.toBytes, throwsA(isA<ArgumentError>()));
       });
 
+      test('error message mentions amount (fungible) or metadata (NFT)', () {
+        final tx = TokenMintTransaction()
+          ..setTokenId(TokenId.fromString('0.0.999'));
+        expect(
+          tx.toBytes,
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message.toString(),
+              'message',
+              allOf(contains('amount (fungible)'), contains('metadata (NFT)')),
+            ),
+          ),
+        );
+      });
+
+      test('throws ArgumentError if both amount and metadata are set', () {
+        final tx = TokenMintTransaction()
+            .setTokenId(TokenId.fromString('0.0.999'))
+            .setAmount(10)
+            .addMetadata(_bytes('ipfs://cid'));
+        expect(tx.toBytes, throwsA(isA<ArgumentError>()));
+      });
+
+      test('setAmount(0) is valid and distinct from not set', () {
+        final tx = TokenMintTransaction()
+            .setTokenId(TokenId.fromString('0.0.999'))
+            .setAmount(0);
+        expect(tx.toBytes, returnsNormally);
+      });
+
       test('does not throw when tokenId and amount are set', () {
         final tx = TokenMintTransaction()
             .setTokenId(TokenId.fromString('0.0.999'))
@@ -83,7 +121,7 @@ void main() {
         expect(body.amount.toInt(), equals(1000));
       });
 
-      test('does not set metadata (NFT support deferred)', () {
+      test('does not set metadata for a fungible mint', () {
         final tx = TokenMintTransaction()
             .setTokenId(TokenId.fromString('0.0.999'))
             .setAmount(1000);
@@ -91,6 +129,74 @@ void main() {
         final body = TokenMintTransactionBody.fromBuffer(tx.toBytes());
 
         expect(body.metadata, isEmpty);
+      });
+    });
+
+    // ---- NFT metadata ----
+
+    group('NFT metadata', () {
+      test('addMetadata adds an entry and returns this', () {
+        final tx = TokenMintTransaction();
+        final result = tx.addMetadata(_bytes('ipfs://cid-1'));
+        expect(result, same(tx));
+        expect(tx.metadata.length, equals(1));
+      });
+
+      test('addMetadata can be called multiple times', () {
+        final tx = TokenMintTransaction()
+            .addMetadata(_bytes('ipfs://cid-1'))
+            .addMetadata(_bytes('ipfs://cid-2'))
+            .addMetadata(_bytes('ipfs://cid-3'));
+        expect(tx.metadata.length, equals(3));
+      });
+
+      test('setMetadata replaces previous metadata and returns this', () {
+        final tx = TokenMintTransaction().addMetadata(_bytes('old'));
+        final result = tx.setMetadata([_bytes('a'), _bytes('b')]);
+        expect(result, same(tx));
+        expect(tx.metadata.length, equals(2));
+        expect(utf8.decode(tx.metadata.first), equals('a'));
+      });
+
+      test('setMetadata with an empty list clears the metadata', () {
+        final tx = TokenMintTransaction()
+            .addMetadata(_bytes('x'))
+            .setMetadata(const []);
+        expect(tx.metadata, isEmpty);
+      });
+
+      test('metadata getter is unmodifiable', () {
+        final tx = TokenMintTransaction().addMetadata(_bytes('x'));
+        expect(() => tx.metadata.add(_bytes('y')), throwsUnsupportedError);
+      });
+
+      test('addMetadata copies the bytes', () {
+        final source = _bytes('abc');
+        final tx = TokenMintTransaction().addMetadata(source);
+        source[0] = 0;
+        expect(utf8.decode(tx.metadata.first), equals('abc'));
+      });
+
+      test('does not throw when tokenId and metadata are set', () {
+        final tx = TokenMintTransaction()
+            .setTokenId(TokenId.fromString('0.0.999'))
+            .addMetadata(_bytes('ipfs://cid'));
+        expect(tx.toBytes, returnsNormally);
+      });
+
+      test('encodes metadata in order and leaves amount at zero', () {
+        final tx = TokenMintTransaction()
+            .setTokenId(TokenId.fromString('0.0.999'))
+            .addMetadata(_bytes('ipfs://cid-1'))
+            .addMetadata(_bytes('ipfs://cid-2'));
+
+        final body = TokenMintTransactionBody.fromBuffer(tx.toBytes());
+
+        expect(body.token.tokenNum.toInt(), equals(999));
+        expect(body.metadata.length, equals(2));
+        expect(utf8.decode(body.metadata[0]), equals('ipfs://cid-1'));
+        expect(utf8.decode(body.metadata[1]), equals('ipfs://cid-2'));
+        expect(body.amount.toInt(), equals(0));
       });
     });
 
@@ -158,3 +264,5 @@ void main() {
     });
   });
 }
+
+Uint8List _bytes(String value) => Uint8List.fromList(utf8.encode(value));
