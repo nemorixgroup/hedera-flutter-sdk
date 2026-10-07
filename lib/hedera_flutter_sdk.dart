@@ -36,8 +36,11 @@ export 'src/crypto/public_key.dart';
 // Models
 export 'src/models/account_id.dart';
 export 'src/models/hbar.dart';
+export 'src/models/nft_id.dart';
 export 'src/models/token_id.dart';
 export 'src/models/transaction_id.dart';
+// Protobuf enums needed by the public API
+export 'src/proto/basic_types.pbenum.dart' show TokenSupplyType, TokenType;
 
 // Queries
 export 'src/queries/account_balance_query.dart';

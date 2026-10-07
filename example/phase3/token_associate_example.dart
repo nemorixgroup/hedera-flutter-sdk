@@ -181,7 +181,6 @@ Future<void> tokenAssociateExample() async {
     print('Token ID:            $tokenId (Demo Coin / DEMO)');
     print('');
     print('Bob Account ID: $bobAccountId');
-    print('Bob Private Key: ${bobPrivateKey.toDerString()}');
     print('Association status:    ${associateReceipt.status}');
     print('Dissociation status:   ${dissociateReceipt.status}');
     print('');

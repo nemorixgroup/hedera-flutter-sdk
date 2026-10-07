@@ -176,6 +176,7 @@ class TransactionReceiptQuery
         status: status.name,
         accountId: accountId,
         tokenId: tokenId,
+        serialNumbers: receipt.serialNumbers.map((s) => s.toInt()).toList(),
       );
     }
 

@@ -17,7 +17,7 @@ This SDK is currently in **active development** by [Nemorix Group](https://nemor
 |:------|:------------|:------:|
 | 1 | Architecture + Protobuf | ✅ Completed |
 | 2 | Crypto + Accounts | ✅ Completed |
-| 3 | HTS Tokens + NFTs | 🔄 Next |
+| 3 | HTS Tokens + NFTs | 🔄 In Progress |
 | 4 | Mirror Node + HCS | ⏳ Pending |
 | 5 | Docs + pub.dev v1.0 | ⏳ Pending |
 | 6 | Launch + HIP | ⏳ Pending |
@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.2.3-dev
+  hedera_flutter_sdk: ^0.2.4-dev
 ```
 
 ## Quick Guide
@@ -211,7 +211,75 @@ await TokenBurnTransaction()
     .then((tx) => tx.execute(client));
 ```
 
-## Current Features (v0.2.3-dev)
+#### Create an NFT collection
+
+NFTs use the same transaction classes as fungible tokens. An NFT
+collection is a token of type `NON_FUNGIBLE_UNIQUE` with 0 decimals and
+0 initial supply; the supply key is needed to mint and burn NFTs later.
+
+```dart
+final createTx = TokenCreateTransaction()
+    .setTokenName('Art Collection')
+    .setTokenSymbol('ART')
+    .setTokenType(TokenType.NON_FUNGIBLE_UNIQUE)
+    .setDecimals(0)
+    .setInitialSupply(0)
+    .setTreasuryAccountId(treasuryAccountId)
+    .setSupplyKey(supplyPublicKey)
+    .setMaxTransactionFee(Hbar(30));
+
+await createTx.signWith(treasuryPrivateKey, client);
+final response = await createTx.execute(client);
+final receipt = await response.getReceipt(client);
+print(receipt.tokenId); // 0.0.123457
+```
+
+#### Mint NFTs
+
+Each metadata entry (max 100 bytes, usually an IPFS URI) mints one NFT.
+The receipt returns the serial numbers, in the same order as the metadata.
+
+```dart
+final mintTx = TokenMintTransaction()
+    .setTokenId(collectionId)
+    .addMetadata(Uint8List.fromList(utf8.encode('ipfs://cid-1')))
+    .addMetadata(Uint8List.fromList(utf8.encode('ipfs://cid-2')));
+
+await mintTx.signWith(supplyPrivateKey, client);
+final response = await mintTx.execute(client);
+final receipt = await response.getReceipt(client);
+print(receipt.serialNumbers); // [1, 2]
+```
+
+#### Transfer an NFT
+
+The receiver must be associated with the token first, and the current
+owner must sign.
+
+```dart
+final nftId = NftId(collectionId, 1); // or NftId.fromString('0.0.123457/1')
+
+final transferTx = CryptoTransferTransaction()
+    .addNftTransfer(nftId, senderAccountId, receiverAccountId);
+
+await transferTx.signWith(senderPrivateKey, client);
+await transferTx.execute(client);
+```
+
+#### Burn NFTs
+
+NFTs must be held by the treasury account to be burned.
+
+```dart
+final burnTx = TokenBurnTransaction()
+    .setTokenId(collectionId)
+    .addSerial(2);
+
+await burnTx.signWith(supplyPrivateKey, client);
+await burnTx.execute(client);
+```
+
+## Current Features (v0.2.4-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -223,7 +291,7 @@ await TokenBurnTransaction()
 - `PrivateKey` with ED25519 and ECDSA generation, import, and signing
 - `PublicKey` with derivation, import, and ED25519/ECDSA(secp256k1) 
    signature verification
-- Base models: `AccountId`, `TokenId`, `TransactionId`, `Hbar`
+- Base models: `AccountId`, `TokenId`, `NftId`, `TransactionId`, `Hbar`
 - `HederaStatusException` and `HederaStatusCode` for typed error handling
 - `HederaConstants` with protocol-level values (ports, fees, endpoints)
 - 335 Dart classes generated from Hedera HAPI Protobuf definitions
@@ -249,7 +317,7 @@ await TokenBurnTransaction()
 - `TransactionRecordQuery`: public query class to retrieve the full record
   of a completed transaction including exact fee, consensus timestamp,
   and full HBAR transfer list
-- `TransactionReceipt`: status, accountId, tokenId
+- `TransactionReceipt`: status, accountId, tokenId, serialNumbers
 - `TransactionRecord`: transactionId, transactionFee, memo,
   consensusTimestamp, status, accountId, tokenId, transfers
 - Integration tests verified on Hedera testnet (HashScan)  
@@ -265,18 +333,28 @@ await TokenBurnTransaction()
 - `TokenCreateTransaction`: creates fungible or non-fungible tokens
   on the Hedera Token Service (HTS), with all 22 token properties
   (name, symbol, supply, decimals, treasury, and all token keys -
-  admin, KYC, freeze, wipe, supply, pause, fee schedule, metadata)
+  admin, KYC, freeze, wipe, supply, pause, fee schedule, metadata);
+  rejects locally an NFT collection with decimals or initial supply
+  different from 0
 - `TokenAssociateTransaction`/`TokenDissociateTransaction`: associate
   or dissociate an account from one or more HTS tokens
 - `CryptoTransferTransaction.addTokenTransfer()`: transfers fungible
   tokens between accounts, with optional `expectedDecimals`
   protection against decimals changing between build and execution
-- `TokenMintTransaction`/`TokenBurnTransaction`: mint or burn
-  fungible tokens (requires the token's supply key)
+- `CryptoTransferTransaction.addNftTransfer()`: transfers a single NFT
+  (`NftId`) between accounts; a token cannot mix fungible and NFT
+  transfers in the same transaction
+- `TokenMintTransaction`/`TokenBurnTransaction`: mint or burn fungible
+  tokens (`setAmount()`) or NFTs (`addMetadata()` / `addSerial()`);
+  exactly one of the two modes per transaction. Requires the token's
+  supply key.
+- NFT support: `NftId`, `TokenType` and `TokenSupplyType` exports, and
+  `TransactionReceipt.serialNumbers` for the serials of minted NFTs
 
 ## Planned Features
 
-- Hedera Token Service (HTS): fungible tokens, NFTs, native KYC
+- Hedera Token Service (HTS): native KYC and freeze, and the remaining
+  token operations
 - Mirror Node REST client with real-time WebSocket subscriptions
 - Hedera Consensus Service (HCS)
 

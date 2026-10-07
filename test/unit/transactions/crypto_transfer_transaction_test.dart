@@ -502,4 +502,122 @@ void main() {
       expect(body.cryptoTransfer.tokenTransfers.length, equals(1));
     });
   });
+
+  // ---- NFT transfers ----
+
+  group('NFT transfers', () {
+    final collection = TokenId.fromString('0.0.5005');
+    final alice = AccountId.fromString('0.0.100');
+    final bob = AccountId.fromString('0.0.200');
+
+    test('nftTransferCount defaults to zero', () {
+      expect(CryptoTransferTransaction().nftTransferCount, equals(0));
+    });
+
+    test('addNftTransfer adds a transfer and returns this', () {
+      final tx = CryptoTransferTransaction();
+      final result = tx.addNftTransfer(NftId(collection, 1), alice, bob);
+      expect(result, same(tx));
+      expect(tx.nftTransferCount, equals(1));
+    });
+
+    test('an NFT-only transaction does not throw', () {
+      final tx = CryptoTransferTransaction()
+          .addNftTransfer(NftId(collection, 1), alice, bob);
+      expect(tx.toBytes, returnsNormally);
+    });
+
+    test('encodes sender, receiver and serial number', () {
+      final tx = CryptoTransferTransaction()
+          .addNftTransfer(NftId(collection, 7), alice, bob);
+
+      final body = CryptoTransferTransactionBody.fromBuffer(tx.toBytes());
+      final list = body.tokenTransfers.single;
+      final nft = list.nftTransfers.single;
+
+      expect(list.token.tokenNum.toInt(), equals(5005));
+      expect(list.transfers, isEmpty);
+      expect(nft.senderAccountID.accountNum.toInt(), equals(100));
+      expect(nft.receiverAccountID.accountNum.toInt(), equals(200));
+      expect(nft.serialNumber.toInt(), equals(7));
+      expect(nft.isApproval, isFalse);
+    });
+
+    test('groups several NFTs of one collection in one list', () {
+      final tx = CryptoTransferTransaction()
+          .addNftTransfer(NftId(collection, 1), alice, bob)
+          .addNftTransfer(NftId(collection, 2), alice, bob);
+
+      final body = CryptoTransferTransactionBody.fromBuffer(tx.toBytes());
+
+      expect(tx.nftTransferCount, equals(2));
+      expect(body.tokenTransfers.length, equals(1));
+      expect(
+        body.tokenTransfers.single.nftTransfers
+            .map((n) => n.serialNumber.toInt())
+            .toList(),
+        equals([1, 2]),
+      );
+    });
+
+    test('uses one list per distinct collection', () {
+      final other = TokenId.fromString('0.0.6006');
+      final tx = CryptoTransferTransaction()
+          .addNftTransfer(NftId(collection, 1), alice, bob)
+          .addNftTransfer(NftId(other, 1), alice, bob);
+
+      final body = CryptoTransferTransactionBody.fromBuffer(tx.toBytes());
+
+      expect(body.tokenTransfers.length, equals(2));
+    });
+
+    test('does not set expectedDecimals on NFT lists', () {
+      final tx = CryptoTransferTransaction()
+          .addNftTransfer(NftId(collection, 1), alice, bob);
+
+      final body = CryptoTransferTransactionBody.fromBuffer(tx.toBytes());
+
+      expect(body.tokenTransfers.single.hasExpectedDecimals(), isFalse);
+    });
+
+    test('can be combined with HBAR and a different fungible token', () {
+      final fungible = TokenId.fromString('0.0.999');
+      final tx = CryptoTransferTransaction()
+          .addHbarTransfer(alice, Hbar(1).negated())
+          .addHbarTransfer(bob, Hbar(1))
+          .addTokenTransfer(fungible, alice, -5)
+          .addTokenTransfer(fungible, bob, 5)
+          .addNftTransfer(NftId(collection, 1), alice, bob);
+
+      final body = CryptoTransferTransactionBody.fromBuffer(tx.toBytes());
+
+      expect(body.transfers.accountAmounts.length, equals(2));
+      expect(body.tokenTransfers.length, equals(2));
+    });
+
+    test('throws ArgumentError mixing fungible and NFT for one token', () {
+      final tx = CryptoTransferTransaction()
+          .addTokenTransfer(collection, alice, -5)
+          .addTokenTransfer(collection, bob, 5)
+          .addNftTransfer(NftId(collection, 1), alice, bob);
+      expect(tx.toBytes, throwsA(isA<ArgumentError>()));
+    });
+
+    test('sets the NFT transfer on the TransactionBody', () async {
+      final tx = CryptoTransferTransaction()
+          .addNftTransfer(NftId(collection, 1), alice, bob);
+
+      final client = HederaClient.forTestnet().setOperator(
+        AccountId.fromString('0.0.12345'),
+        await PrivateKey.generateED25519(),
+      );
+
+      final body = await tx.buildBody(client);
+
+      expect(
+        body.cryptoTransfer.tokenTransfers.single.nftTransfers.length,
+        equals(1),
+      );
+    });
+  });
 }

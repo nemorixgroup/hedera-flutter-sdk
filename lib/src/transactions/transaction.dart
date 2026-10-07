@@ -406,7 +406,7 @@ abstract class Transaction<T extends Transaction<T>> {
   /// Each subclass constructs the specific gRPC service client it needs
   /// (for example, `CryptoServiceClient` for account/HBAR transactions,
   /// or `TokenServiceClient` for token transactions) and routes the
-  /// transaction to the correct method — for example
+  /// transaction to the correct method; for example
   /// AccountCreateTransaction calls `CryptoServiceClient(channel)
   /// .createAccount()`.
   ///
@@ -645,6 +645,7 @@ class TransactionResponse {
         status: status.name,
         accountId: accountId,
         tokenId: tokenId,
+        serialNumbers: receipt.serialNumbers.map((s) => s.toInt()).toList(),
       );
     }
 
@@ -792,6 +793,7 @@ class TransactionReceipt {
     required this.status,
     this.accountId,
     this.tokenId,
+    this.serialNumbers = const [],
   });
 
   /// The final status of the transaction.
@@ -802,6 +804,12 @@ class TransactionReceipt {
 
   /// The token ID created by a TokenCreateTransaction; if applicable.
   final String? tokenId;
+
+  /// The serial numbers of the NFTs minted by a TokenMintTransaction.
+  ///
+  /// One entry per metadata item, in the same order they were added.
+  /// Empty for any other transaction, including fungible token mints.
+  final List<int> serialNumbers;
 
   @override
   String toString() => 'TransactionReceipt(status: $status)';

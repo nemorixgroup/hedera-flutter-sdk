@@ -5,6 +5,102 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.4-dev
+
+Phase 3 continues: NFT support (non-fungible tokens), implemented in the
+same classes used for fungible tokens.
+
+### Added
+
+- `NftId`: identifies a single NFT as a token ID plus a serial number
+  - `NftId(tokenId, serialNumber)`, `NftId.fromString()` (accepts
+    `tokenId/serial` and `tokenId@serial`), `toString()` returns
+    `tokenId/serial`, value equality, and `toProto()`
+- `TokenMintTransaction` now mints NFTs
+  - `addMetadata()` (one entry per NFT, max 100 bytes each) and
+    `setMetadata()` (replaces the list; an empty list clears it)
+  - `metadata` getter (unmodifiable)
+- `TokenBurnTransaction` now burns NFTs
+  - `addSerial()` and `setSerials()` (serial numbers of the NFTs to
+    burn; they must be held by the treasury account)
+  - `serials` getter (unmodifiable)
+- `CryptoTransferTransaction.addNftTransfer(nftId, sender, receiver)`:
+  transfers one NFT between accounts; the current owner must sign and
+  the receiver must be associated with the token
+- `CryptoTransferTransaction.nftTransferCount`
+- `TransactionReceipt.serialNumbers`: serial numbers of the NFTs minted
+  by a `TokenMintTransaction`, in the same order as the metadata
+  entries (empty for any other transaction). Also populated by
+  `TransactionReceiptQuery`.
+- `TokenType` and `TokenSupplyType` are now exported from
+  `hedera_flutter_sdk.dart`, so `setTokenType(TokenType.NON_FUNGIBLE_UNIQUE)`
+  works without importing generated files
+- `example/phase3/token_nft_example.dart`: end-to-end example creating
+  an NFT collection, minting 3 NFTs, transferring one, and burning one,
+  plus two local validation demos
+- 55 new unit tests (`nft_id_test.dart`, `transaction_receipt_test.dart`,
+  `token_create_nft_test.dart`, and additions to the mint, burn and
+  crypto transfer tests)
+- 699 total unit tests passing
+
+### Changed
+
+- `TokenMintTransaction` and `TokenBurnTransaction` now require exactly
+  one of `amount` (fungible) or `metadata`/`serials` (NFT). Providing
+  neither, or both, throws `ArgumentError` when the transaction is
+  built. `setAmount(0)` remains valid.
+- `TokenCreateTransaction` rejects locally a `NON_FUNGIBLE_UNIQUE` token
+  with `decimals` or `initialSupply` different from 0, with an
+  `ArgumentError` that points to `TokenMintTransaction.addMetadata()`
+- `CryptoTransferTransaction` throws `ArgumentError` when the same token
+  is used in both `addTokenTransfer()` and `addNftTransfer()`, since the
+  protobuf `TokenTransferList` accepts fungible transfers or NFT
+  transfers, never both
+- `token_create_example.dart` and `token_associate_example.dart` no
+  longer print private keys
+- `analysis_options.yaml` excludes `build/**`
+- Helper scripts under `scripts/` updated for macOS
+
+### Notes
+
+- Batch size limits for NFT mint and burn are not hardcoded; the network
+  enforces them (`tokens.nfts.maxBatchSizeMint` and
+  `tokens.nfts.maxBatchSizeBurn`).
+- Not enforced locally for NFT collections: supply key, `FINITE` supply
+  type, or `maxSupply`. The network resolves them (for example
+  `TOKEN_HAS_NO_SUPPLY_KEY`).
+- Retry on `BUSY` responses is not part of this version.
+- `isApproval` on NFT transfers and `newTotalSupply` on the receipt are
+  not exposed yet.
+- `setHighVolume()` (HIP-1313) remains deferred, same open question as
+  in v0.2.3-dev.
+- The consensus node `AccountBalanceQuery` is deprecated for token
+  balances (HIP-367, removed from consensus nodes in recent Hedera
+  Services releases). Token and NFT balance queries will be designed
+  around the Mirror Node REST API in v0.2.6-dev, and the Phase 2
+  `AccountBalanceQuery` needs a separate migration.
+
+## Official References
+
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/mint-a-token
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/burn-a-token
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/transfer-tokens
+
+### Verified
+
+Live on Hedera testnet: created an NFT collection with a supply key,
+minted 3 NFTs (`SUCCESS`, serials 1, 2 and 3), associated a second
+account and transferred serial 1 to it (`SUCCESS`), then burned serial 3
+from the treasury (`SUCCESS`), confirmed on HashScan. Run twice (the
+individual example and the combined example), same results.
+
+### Status
+
+Phase 3 in progress: NFT support implemented and verified live on
+testnet.   
+Not ready for production use.   
+Next: KYC and freeze (v0.2.5-dev).  
+
 ## 0.2.3-dev
 
 Phase 3 continues: mint and burn for fungible tokens.
