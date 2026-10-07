@@ -15,9 +15,13 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 /// 5. Print the new token ID and its key configuration
 ///
 /// Token keys (admin, supply, etc.) are set once at creation and
-/// cannot be added later if omitted here — see setSupplyKey() below
-/// for why this example sets one even though minting/burning is not
-/// covered until a future version of this SDK.
+/// cannot be added later if omitted here; see setSupplyKey() below
+/// for why this example sets one. The supply key is what allows
+/// minting and burning the token afterwards (see
+/// token_mint_burn_example.dart).
+///
+/// For safety, this example never prints private keys. A real
+/// application must generate, store and back up its keys securely.
 ///
 /// Required environment variables:
 /// ```sh
@@ -75,7 +79,6 @@ Future<void> tokenCreateExample() async {
     final treasuryPrivateKey = await PrivateKey.generateED25519();
     final treasuryPublicKey = await treasuryPrivateKey.derivePublicKey();
 
-    print('Treasury Private Key: ${treasuryPrivateKey.toDerString()}');
     print('Treasury Public Key:  ${treasuryPublicKey.toHex()}');
 
     final treasuryCreateResponse = await AccountCreateTransaction()
@@ -99,13 +102,11 @@ Future<void> tokenCreateExample() async {
 
     // A supply key is REQUIRED for the token to ever mint or burn
     // tokens after creation. Without it, the initial supply set here
-    // is permanently fixed. Minting/burning is not yet implemented
-    // in this SDK, but the key is set now since it cannot be added
-    // to the token later if omitted at creation.
+    // is permanently fixed. The key is set at creation because it
+    // cannot be added to the token later if omitted.
     final supplyPrivateKey = await PrivateKey.generateED25519();
     final supplyPublicKey = await supplyPrivateKey.derivePublicKey();
 
-    print('Supply Private Key: ${supplyPrivateKey.toDerString()}');
     print('Supply Public Key:  ${supplyPublicKey.toHex()}');
     print('');
 
@@ -169,9 +170,6 @@ Future<void> tokenCreateExample() async {
     print('Operator:  $operatorIdStr');
     print('');
     print('Treasury Account ID:  $treasuryAccountId');
-    print('Treasury Private Key: ${treasuryPrivateKey.toDerString()}');
-    print('');
-    print('Supply Private Key: ${supplyPrivateKey.toDerString()}');
     print('');
     print('Token ID:     $tokenId');
     print('Token Name:   USD Bar (USDB)');
