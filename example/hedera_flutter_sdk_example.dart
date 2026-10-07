@@ -9,6 +9,7 @@ import 'phase2/wallet_example.dart';
 import 'phase3/token_associate_example.dart';
 import 'phase3/token_create_example.dart';
 import 'phase3/token_mint_burn_example.dart';
+import 'phase3/token_nft_example.dart';
 import 'phase3/token_transfer_example.dart';
 
 /// hedera_flutter_sdk - Examples Entry Point
@@ -107,6 +108,9 @@ import 'phase3/token_transfer_example.dart';
 ///   - TokenAssociateTransaction, TokenDissociateTransaction
 ///   - CryptoTransferTransaction extended with addTokenTransfer()
 ///   - TokenMintTransaction, TokenBurnTransaction
+///   - NFT support: NftId, TokenMintTransaction.addMetadata(),
+///     TokenBurnTransaction.addSerial(),
+///     CryptoTransferTransaction.addNftTransfer()
 ///
 /// Phase 4 (planned): Hedera Consensus Service (HCS)
 ///   - TopicCreateTransaction, TopicSubmitMessageTransaction
@@ -191,4 +195,11 @@ Future<void> main() async {
   // safety margin fix.
   // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
   await tokenMintBurnExample();
+
+  // NFT support: creates an NFT collection, mints 3 NFTs with
+  // addMetadata(), transfers one with addNftTransfer() and burns one
+  // with addSerial() (v0.2.4-dev). Uses the same mint, burn and
+  // transfer classes as fungible tokens.
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await tokenNftExample();
 }
