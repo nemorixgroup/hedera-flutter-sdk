@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart';
 import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
-import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/duration.pb.dart'
     as hedera_duration;
 import 'package:hedera_flutter_sdk/src/proto/timestamp.pb.dart'
@@ -317,6 +316,11 @@ class TokenCreateTransaction extends Transaction<TokenCreateTransaction> {
   /// Sets the token type. Defaults to [TokenType.FUNGIBLE_COMMON] if
   /// not set.
   ///
+  /// For an NFT collection use [TokenType.NON_FUNGIBLE_UNIQUE]; it
+  /// requires `decimals` and `initialSupply` to be 0, otherwise
+  /// building the transaction throws [ArgumentError]. Set a supply key
+  /// so NFTs can be minted later with `TokenMintTransaction`.
+  ///
   /// Example:
   /// ```dart
   /// transaction.setTokenType(TokenType.FUNGIBLE_COMMON);
@@ -469,6 +473,18 @@ class TokenCreateTransaction extends Transaction<TokenCreateTransaction> {
       throw ArgumentError(
         'TokenCreateTransaction requires a treasury account ID. '
         'Call setTreasuryAccountId() first.',
+      );
+    }
+
+    // Per the Hedera docs, an NFT collection must have 0 decimals and
+    // 0 initial supply (NFTs come into existence through minting).
+    if (_tokenType == TokenType.NON_FUNGIBLE_UNIQUE &&
+        (_decimals != 0 || _initialSupply != 0)) {
+      throw ArgumentError(
+        'A NON_FUNGIBLE_UNIQUE token requires decimals = 0 and '
+        'initialSupply = 0. Got: decimals = $_decimals, '
+        'initialSupply = $_initialSupply. Mint NFTs with '
+        'TokenMintTransaction.addMetadata() after creating the token.',
       );
     }
 
