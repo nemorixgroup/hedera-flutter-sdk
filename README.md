@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.2.4-dev
+  hedera_flutter_sdk: ^0.2.5-dev
 ```
 
 ## Quick Guide
@@ -279,7 +279,79 @@ await burnTx.signWith(supplyPrivateKey, client);
 await burnTx.execute(client);
 ```
 
-## Current Features (v0.2.4-dev)
+#### Create a token with KYC and freeze keys
+
+KYC and freeze controls only work if the token was created with the
+matching keys. Token keys can only be set at creation. The treasury
+account is not subject to KYC or freeze.
+
+```dart
+final createTx = TokenCreateTransaction()
+    .setTokenName('Compliance Coin')
+    .setTokenSymbol('CPLY')
+    .setDecimals(2)
+    .setInitialSupply(10000) // 100.00 CPLY
+    .setTreasuryAccountId(treasuryAccountId)
+    .setKycKey(kycPublicKey)
+    .setFreezeKey(freezePublicKey)
+    .setMaxTransactionFee(Hbar(30));
+
+await createTx.signWith(treasuryPrivateKey, client);
+final response = await createTx.execute(client);
+final receipt = await response.getReceipt(client);
+print(receipt.tokenId); // 0.0.123458
+```
+
+#### Grant and revoke KYC
+
+While a token has a KYC key, an account must be granted KYC before it
+can receive the token. The account must already be associated with the
+token, and the KYC key must sign.
+
+```dart
+final grantTx = TokenGrantKycTransaction()
+    .setTokenId(tokenId)
+    .setAccountId(aliceAccountId);
+
+await grantTx.signWith(kycPrivateKey, client);
+await grantTx.execute(client);
+
+// Later, to take KYC away again:
+final revokeTx = TokenRevokeKycTransaction()
+    .setTokenId(tokenId)
+    .setAccountId(aliceAccountId);
+
+await revokeTx.signWith(kycPrivateKey, client);
+await revokeTx.execute(client);
+```
+
+#### Freeze and unfreeze an account
+
+A frozen account can neither send nor receive the token. The freeze key
+must sign.
+
+```dart
+final freezeTx = TokenFreezeTransaction()
+    .setTokenId(tokenId)
+    .setAccountId(aliceAccountId);
+
+await freezeTx.signWith(freezePrivateKey, client);
+await freezeTx.execute(client);
+
+// Later, to restore the account:
+final unfreezeTx = TokenUnfreezeTransaction()
+    .setTokenId(tokenId)
+    .setAccountId(aliceAccountId);
+
+await unfreezeTx.signWith(freezePrivateKey, client);
+await unfreezeTx.execute(client);
+```
+
+A transfer that the network rejects because of KYC or freeze throws a
+`HederaStatusException` whose status is
+`ACCOUNT_KYC_NOT_GRANTED_FOR_TOKEN` or `ACCOUNT_FROZEN_FOR_TOKEN`.
+
+## Current Features (v0.2.5-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -292,7 +364,8 @@ await burnTx.execute(client);
 - `PublicKey` with derivation, import, and ED25519/ECDSA(secp256k1) 
    signature verification
 - Base models: `AccountId`, `TokenId`, `NftId`, `TransactionId`, `Hbar`
-- `HederaStatusException` and `HederaStatusCode` for typed error handling
+- `HederaStatusException` and `HederaStatusCode` for typed error handling;
+  any status code returned by the network resolves to its official name
 - `HederaConstants` with protocol-level values (ports, fees, endpoints)
 - 335 Dart classes generated from Hedera HAPI Protobuf definitions
 - `Transaction<T>`: generic base class with fluent API, signing,
@@ -350,11 +423,15 @@ await burnTx.execute(client);
   supply key.
 - NFT support: `NftId`, `TokenType` and `TokenSupplyType` exports, and
   `TransactionReceipt.serialNumbers` for the serials of minted NFTs
+- `TokenGrantKycTransaction`/`TokenRevokeKycTransaction`: grant or
+  revoke KYC for an account on a token (requires the token's KYC key)
+- `TokenFreezeTransaction`/`TokenUnfreezeTransaction`: freeze or
+  unfreeze an account on a token (requires the token's freeze key)
 
 ## Planned Features
 
-- Hedera Token Service (HTS): native KYC and freeze, and the remaining
-  token operations
+- Hedera Token Service (HTS): token queries, custom fees, and the
+  remaining token operations
 - Mirror Node REST client with real-time WebSocket subscriptions
 - Hedera Consensus Service (HCS)
 

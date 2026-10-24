@@ -5,6 +5,113 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.5-dev
+
+Phase 3 continues: KYC and freeze controls for token holders.
+
+### Added
+
+- `TokenGrantKycTransaction`: grants "Know Your Customer" (KYC) to an
+  account for a token
+  - `setTokenId()` (required), `setAccountId()` (required)
+  - Requires the token's KYC key and the fee payer to sign
+- `TokenRevokeKycTransaction`: revokes KYC from an account for a token
+  - `setTokenId()` (required), `setAccountId()` (required)
+  - Requires the token's KYC key and the fee payer to sign
+- `TokenFreezeTransaction`: freezes an account for a token, so it can
+  neither send nor receive that token
+  - `setTokenId()` (required), `setAccountId()` (required)
+  - Requires the token's freeze key and the fee payer to sign
+  - Idempotent: freezing an already frozen account succeeds
+- `TokenUnfreezeTransaction`: unfreezes an account for a token
+  - `setTokenId()` (required), `setAccountId()` (required)
+  - Requires the token's freeze key and the fee payer to sign
+  - Idempotent: unfreezing an account that is not frozen succeeds
+- `HederaStatusCode` constants: `insufficientTxFee`, `accountDeleted`,
+  `insufficientTokenBalance`, `tokenHasNoFreezeKey`, `tokenHasNoKycKey`,
+  `tokenHasNoSupplyKey` and `tokenWasDeleted`
+- `example/phase3/token_kyc_freeze_example.dart`: end-to-end example
+  creating a token with a KYC key and a freeze key, then showing
+  transfers rejected before KYC is granted, while the account is
+  frozen, and after KYC is revoked, and accepted after KYC is granted
+  and after unfreezing
+- 78 new unit tests: 13 for each of the four new transaction classes
+  (defaults, setters, `toBytes()` validation and serialization,
+  `buildBody()` integration confirming `tokenGrantKyc`,
+  `tokenRevokeKyc`, `tokenFreeze` and `tokenUnfreeze` oneof routing,
+  signing), plus 26 in `hedera_status_code_test.dart`, including a test
+  that checks every named constant against the generated
+  `ResponseCodeEnum`
+- 777 total unit tests passing
+
+### Changed
+
+- `HederaStatusCode.fromCode()` now falls back to the generated
+  protobuf `ResponseCodeEnum` for codes without a named constant, so
+  `name` shows the official status name instead of `UNKNOWN_STATUS`.
+  `UNKNOWN_STATUS` is now returned only for codes that are not defined
+  in the protobuf either, and the original code value is preserved.
+
+### Fixed
+
+- **Status code numbers**: five `HederaStatusCode` constants had a wrong
+  numeric code, so `fromCode()` could return a wrong name or no name
+  for them. Corrected against the official `response_code.proto`:
+  - `insufficientAccountBalance`: 28 (was 18, which is
+    `RECEIPT_NOT_FOUND`)
+  - `accountFrozenForToken`: 165 (was 178, which is
+    `INSUFFICIENT_TOKEN_BALANCE`)
+  - `accountKycNotGrantedForToken`: 176 (was 181, which is
+    `TOKEN_HAS_NO_WIPE_KEY`)
+  - `invalidTokenId`: 167 (was 150, which is `INVALID_TOPIC_ID`)
+  - `tokenIsPaused`: 265 (was 260, which is
+    `SERIAL_NUMBER_LIMIT_REACHED`)
+
+  The constant names are unchanged. The correct values were already
+  present for `success`, `invalidSignature`, `insufficientPayerBalance`,
+  `invalidAccountId`, `tokenNotAssociatedToAccount` and
+  `transactionExpired`.
+
+### Notes
+
+- Observed on testnet: the treasury account of a token created with a
+  KYC key and a freeze key can transfer without being granted KYC and
+  is not frozen, so no extra step is needed for the treasury.
+- KYC and freeze status cannot be read back with a query yet; the
+  example checks them by behavior (whether a transfer is accepted or
+  rejected). Token relationship queries are planned for v0.2.6-dev.
+- Not part of this version: wipe, pause and unpause, token deletion and
+  `TokenUpdateTransaction`.
+- `freezeDefault` is supported by `TokenCreateTransaction` since
+  v0.2.0-dev, but the example does not use it.
+- Token transaction classes remain flat in `lib/src/transactions/tokens/`.
+  Regrouping them by theme is planned as its own version, v0.2.8-dev.
+
+## Official References
+
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/enable-kyc-account-flag
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/disable-kyc-account-flag
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/freeze-an-account
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/unfreeze-an-account
+
+### Verified
+
+Live on Hedera testnet: created a token with a KYC key and a freeze
+key, created and associated a second account, and confirmed the whole
+sequence. A transfer before KYC was rejected with
+`ACCOUNT_KYC_NOT_GRANTED_FOR_TOKEN`; after granting KYC it succeeded;
+while frozen it was rejected with `ACCOUNT_FROZEN_FOR_TOKEN`; after
+unfreezing it succeeded; and after revoking KYC it was rejected again
+with `ACCOUNT_KYC_NOT_GRANTED_FOR_TOKEN`. The grant, freeze, unfreeze
+and revoke transactions all returned `SUCCESS`.
+
+### Status
+
+Phase 3 in progress: KYC and freeze implemented and verified live on
+testnet.   
+Not ready for production use.   
+Next: token queries (v0.2.6-dev).  
+
 ## 0.2.4-dev
 
 Phase 3 continues: NFT support (non-fungible tokens), implemented in the
