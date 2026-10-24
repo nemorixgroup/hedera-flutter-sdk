@@ -374,7 +374,7 @@ Future<String> _transferToAlice({
 
     final response = await transferTx.execute(client);
     final receipt = await response.getReceipt(client);
-    return receipt.status.toString();
+    return receipt.status;
   } on HederaStatusException catch (e) {
     return e.statusCode.name;
   }
