@@ -8,6 +8,7 @@ import 'phase2/transaction_example.dart';
 import 'phase2/wallet_example.dart';
 import 'phase3/token_associate_example.dart';
 import 'phase3/token_create_example.dart';
+import 'phase3/token_kyc_freeze_example.dart';
 import 'phase3/token_mint_burn_example.dart';
 import 'phase3/token_nft_example.dart';
 import 'phase3/token_transfer_example.dart';
@@ -111,6 +112,9 @@ import 'phase3/token_transfer_example.dart';
 ///   - NFT support: NftId, TokenMintTransaction.addMetadata(),
 ///     TokenBurnTransaction.addSerial(),
 ///     CryptoTransferTransaction.addNftTransfer()
+///   - KYC and freeze: TokenGrantKycTransaction,
+///     TokenRevokeKycTransaction, TokenFreezeTransaction,
+///     TokenUnfreezeTransaction
 ///
 /// Phase 4 (planned): Hedera Consensus Service (HCS)
 ///   - TopicCreateTransaction, TopicSubmitMessageTransaction
@@ -202,4 +206,11 @@ Future<void> main() async {
   // transfer classes as fungible tokens.
   // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
   await tokenNftExample();
+
+  // KYC and freeze: creates a token with a KYC key and a freeze key,
+  // then shows transfers being rejected before KYC is granted, while
+  // the account is frozen, and after KYC is revoked, and accepted
+  // after KYC is granted and after unfreezing (v0.2.5-dev).
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await tokenKycFreezeExample();
 }
