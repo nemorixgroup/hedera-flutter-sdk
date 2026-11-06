@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:grpc/grpc.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_network.dart';
 import 'package:hedera_flutter_sdk/src/client/hedera_node.dart';
+import 'package:hedera_flutter_sdk/src/client/mirror_node_client.dart';
 import 'package:hedera_flutter_sdk/src/client/retry_policy.dart';
 import 'package:hedera_flutter_sdk/src/core/hedera_constants.dart';
 import 'package:hedera_flutter_sdk/src/crypto/private_key.dart';
@@ -219,7 +220,8 @@ class HederaClient {
 
   /// Closes the gRPC channel and releases resources.
   ///
-  /// Call this when the client is no longer needed.
+  /// Call this when the client is no longer needed. An HTTP client
+  /// supplied through [setHttpClient] is not closed; the caller owns it.
   ///
   /// Example:
   /// ```dart
@@ -228,7 +230,68 @@ class HederaClient {
   Future<void> close() async {
     await _channel?.shutdown();
     _channel = null;
+    _releaseHttpClient();
   }
+
+  // ---- Mirror Node (REST) ----
+
+  http.Client? _httpClient;
+  bool _ownsHttpClient = false;
+
+  /// Sets the HTTP client used for every Mirror Node request.
+  ///
+  /// Useful for tests (for example with `MockClient`) or to share a
+  /// client with the rest of an application. The caller keeps ownership
+  /// of [httpClient]; [close] does not close it.
+  HederaClient setHttpClient(http.Client httpClient) {
+    _releaseHttpClient();
+    _httpClient = httpClient;
+    _ownsHttpClient = false;
+    return this;
+  }
+
+  /// The HTTP client in use, created lazily when none was supplied.
+  http.Client get _http {
+    final existing = _httpClient;
+    if (existing != null) {
+      return existing;
+    }
+    final created = http.Client();
+    _httpClient = created;
+    _ownsHttpClient = true;
+    return created;
+  }
+
+  void _releaseHttpClient() {
+    if (_ownsHttpClient) {
+      _httpClient?.close();
+    }
+    _httpClient = null;
+    _ownsHttpClient = false;
+  }
+
+  /// The Mirror Node REST API base URL for the active network.
+  String get mirrorNodeBaseUrl {
+    switch (network) {
+      case HederaNetwork.mainnet:
+        return HederaConstants.mainnetMirrorNodeUrl;
+      case HederaNetwork.testnet:
+        return HederaConstants.testnetMirrorNodeUrl;
+      case HederaNetwork.previewnet:
+        return HederaConstants.previewnetMirrorNodeUrl;
+    }
+  }
+
+  /// A [MirrorNodeClient] for the active network, using this client's
+  /// HTTP client and [retryPolicy].
+  ///
+  /// The returned object is a lightweight wrapper; it does not need to
+  /// be closed.
+  MirrorNodeClient get mirrorNode => MirrorNodeClient(
+        baseUrl: mirrorNodeBaseUrl,
+        httpClient: _http,
+        retryPolicy: _retryPolicy,
+      );
 
   // ---- Dynamic node list (Mirror Node) ----
 
@@ -238,18 +301,6 @@ class HederaClient {
 
   /// How long a fetched node list is cached before being refreshed.
   static const nodeListCacheDuration = Duration(hours: 24);
-
-  /// The Mirror Node REST API base URL for the active network.
-  String get _mirrorNodeBaseUrl {
-    switch (network) {
-      case HederaNetwork.mainnet:
-        return 'https://mainnet-public.mirrornode.hedera.com';
-      case HederaNetwork.testnet:
-        return 'https://testnet.mirrornode.hedera.com';
-      case HederaNetwork.previewnet:
-        return 'https://previewnet.mirrornode.hedera.com';
-    }
-  }
 
   /// Fetches the current list of consensus nodes from the Mirror Node
   /// REST API (`/api/v1/network/nodes`), caching the result for
@@ -274,9 +325,9 @@ class HederaClient {
 
     try {
       final uri = Uri.parse(
-        '$_mirrorNodeBaseUrl/api/v1/network/nodes?limit=100',
+        '$mirrorNodeBaseUrl/api/v1/network/nodes?limit=100',
       );
-      final response = await http.get(uri);
+      final response = await _http.get(uri);
       if (response.statusCode != 200) {
         throw StateError('Mirror Node returned ${response.statusCode}');
       }
