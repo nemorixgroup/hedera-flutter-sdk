@@ -5,6 +5,128 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.6-dev
+
+Phase 3 continues: token queries, read from the Mirror Node REST API.
+
+### Added
+
+- `MirrorNodeClient`: HTTP client for the Mirror Node REST API
+  (`lib/src/client/mirror_node_client.dart`)
+  - `getJson()` and `getAll()` (follows `links.next` pagination, with a
+    `maxPages` safety limit)
+  - Retries transient failures per the client `RetryPolicy`: HTTP 5xx,
+    HTTP 429, timeouts and network errors. Other 4xx responses are never
+    retried.
+  - Injectable `http.Client` and delay, for tests
+- `MirrorNodeException`: thrown for HTTP failures, with the request path,
+  the status code and the message from the Mirror Node error body
+- `HederaClient.mirrorNode`, `HederaClient.mirrorNodeBaseUrl` and
+  `HederaClient.setHttpClient()`. The client now owns one lazily created
+  `http.Client` and releases it in `close()`; a client passed to
+  `setHttpClient()` is not closed by the SDK.
+- `MirrorNodeAccountBalanceQuery`: HBAR balance of an account
+  (`GET /api/v1/balances`), returns `MirrorNodeAccountBalance` (`hbars`,
+  `timestamp`)
+- `MirrorNodeTokenBalanceQuery`: token balances of an account
+  (`GET /api/v1/accounts/{id}/tokens`), all tokens or one with
+  `setTokenId()`; follows pagination. Returns a list of
+  `MirrorNodeTokenBalance` (`tokenId`, `balance`, `decimals`,
+  `kycStatus`, `freezeStatus`, `automaticAssociation`,
+  `createdTimestamp`). An empty list means the account is not
+  associated with the token.
+- `MirrorNodeTokenInfoQuery`: full token information
+  (`GET /api/v1/tokens/{id}`), returns `MirrorNodeTokenInfo` (name,
+  symbol, type, supply type, decimals, supplies, treasury, all token
+  keys, freeze default, deleted, pause status, auto renew, timestamps,
+  metadata and custom fees)
+- `MirrorNodeTokenNftInfoQuery`: information about one NFT
+  (`GET /api/v1/tokens/{id}/nfts/{serial}`), returns `MirrorNodeNftInfo`
+  (`nftId`, `accountId` as owner, timestamps, `deleted`, `metadata`,
+  `spender`, `delegatingSpender`)
+- Read models: `MirrorNodeKey` with `MirrorNodeKeyType`,
+  `MirrorNodeCustomFees` with `MirrorNodeFixedFee`,
+  `MirrorNodeFractionalFee`, `MirrorNodeRoyaltyFee` and
+  `MirrorNodeRoyaltyFallbackFee`
+- Enums `KycStatus`, `FreezeStatus` and `PauseStatus`, each with an
+  `apiValue` and an `unknown` fallback for values added by future
+  Mirror Node releases
+- `example/phase3/token_queries_example.dart`: end-to-end example that
+  creates a fungible token with a KYC key and an NFT collection, moves
+  some of both to a second account and reads everything back with the
+  four queries, including the expected not-found errors
+- 173 new unit tests (777 to 950 total)
+
+### Changed
+
+- `AccountBalanceQuery` is now `@Deprecated`. Hedera removed this
+  consensus query in release v0.77 (testnet on September 15, 2026;
+  mainnet on September 29, 2026). Use `MirrorNodeAccountBalanceQuery`
+  for HBAR and `MirrorNodeTokenBalanceQuery` for tokens. `toBytes()` is
+  unchanged.
+- `Query` documentation now states that executing consensus queries is
+  not implemented and points to the Mirror Node queries
+- `example/phase2/query_example.dart` reads a real balance with
+  `MirrorNodeAccountBalanceQuery` and no longer presents
+  `AccountBalanceQuery` as usable
+- Node list fetching (`HederaClient` node selection) now uses the
+  client-owned `http.Client`
+- `README.md` and the example entry point updated for the new queries
+
+### Notes
+
+- A Mirror Node response that does not exist maps to the matching
+  status: unknown account to `INVALID_ACCOUNT_ID`, unknown token to
+  `INVALID_TOKEN_ID` and unknown NFT to `INVALID_NFT_ID`, as a
+  `HederaStatusException`. Other HTTP failures are a
+  `MirrorNodeException`.
+- Token balances are read from `/accounts/{id}/tokens` and not from
+  `/balances`, whose token list is limited and not recommended for
+  tokens.
+- `Query.execute()` for consensus nodes (gRPC plus the signed query
+  payment) was never implemented. It is planned as its own version,
+  v0.3.0-dev, together with `TokenInfoQuery`, `TokenNftInfoQuery` and
+  `AccountInfoQuery` execution.
+- `spender` of an NFT: the Mirror Node OpenAPI schema names it
+  `spender`, while its example uses `spender_id`; the parser accepts
+  both. Live on testnet it was `null` because no allowance exists, so
+  the name was not confirmed against a real value.
+- Result models are named `MirrorNode...` on purpose, so the names
+  `TokenInfo` and `TokenNftInfo` stay free for the consensus queries.
+  The read-only fee models are named `MirrorNodeFixedFee` and so on, so
+  the names for the custom fees you set at token creation stay free for
+  v0.2.7-dev.
+- Not part of this version: the optional `timestamp` parameter for
+  historical reads, and custom fees as input (v0.2.7-dev).
+- Token transaction classes remain flat in `lib/src/transactions/tokens/`.
+  Regrouping them is planned as its own version, v0.2.8-dev.
+
+## Official References
+
+- https://docs.hedera.com/hedera/sdks-and-apis/rest-api
+- https://hips.hedera.com/hip/hip-367
+
+### Verified
+
+Live on Hedera testnet: created a treasury, a fungible token with a KYC
+key and an NFT collection (2 NFTs), created and associated a second
+account, granted KYC and transferred tokens and one NFT. The four
+queries then returned the expected data: the HBAR balance, the token
+balance with KYC `GRANTED` and freeze `UNFROZEN` (and `NOT_APPLICABLE`
+for the NFT collection), the token and collection information, and the
+owner and metadata of each NFT. An account with no association returned
+an empty list, and an unknown token and an unknown NFT serial resolved
+to `INVALID_TOKEN_ID` and `INVALID_NFT_ID`. The Mirror Node reflected
+the changes about 2 seconds after consensus; only one read needed a
+retry.
+
+### Status
+
+Phase 3 in progress: token queries implemented and verified live on
+testnet.   
+Not ready for production use.   
+Next: custom fees (v0.2.7-dev).
+
 ## 0.2.5-dev
 
 Phase 3 continues: KYC and freeze controls for token holders.

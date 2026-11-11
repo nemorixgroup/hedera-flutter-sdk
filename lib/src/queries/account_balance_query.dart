@@ -1,28 +1,43 @@
 import 'dart:typed_data';
 
-// import 'package:fixnum/fixnum.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 import 'package:hedera_flutter_sdk/src/models/hbar.dart';
-// import 'package:hedera_flutter_sdk/src/proto/basic_types.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/crypto_get_account_balance.pb.dart';
 import 'package:hedera_flutter_sdk/src/proto/query_header.pb.dart';
 import 'package:hedera_flutter_sdk/src/queries/query.dart';
 
-/// Queries the HBAR balance of a Hedera account.
+/// Builds the consensus-node query for the HBAR balance of an account.
 ///
-/// Example:
+/// **Deprecated.** Hedera removed this query from consensus nodes in
+/// release v0.77 (testnet on September 15, 2026; mainnet on September
+/// 29, 2026), so it can no longer be answered by the network. This
+/// class only serializes the request with [toBytes]; its `execute()`
+/// was never implemented in this SDK.
+///
+/// Use instead:
+/// - `MirrorNodeAccountBalanceQuery` for the HBAR balance.
+/// - `MirrorNodeTokenBalanceQuery` for token balances.
+///
+/// Example of the replacement:
 /// ```dart
-/// final balance = await AccountBalanceQuery()
+/// final balance = await MirrorNodeAccountBalanceQuery()
 ///     .setAccountId(AccountId.fromString('0.0.12345'))
 ///     .execute(client);
 ///
-/// print(balance.toHbars()); // 10.0
+/// print(balance.hbars.toHbars()); // 10.0
 /// ```
+@Deprecated(
+  'AccountBalanceQuery was removed from consensus nodes in release '
+  'v0.77. Use MirrorNodeAccountBalanceQuery for HBAR balances and '
+  'MirrorNodeTokenBalanceQuery for token balances.',
+)
 class AccountBalanceQuery extends Query<Hbar, AccountBalanceQuery> {
   /// Creates a new [AccountBalanceQuery] with default values.
   ///
   /// An [AccountId] must be set via [setAccountId] before calling
-  /// [toBytes] or [execute].
+  /// [toBytes].
+
+  @Deprecated('Use MirrorNodeAccountBalanceQuery instead.')
   AccountBalanceQuery();
 
   AccountId? _accountId;
@@ -57,15 +72,6 @@ class AccountBalanceQuery extends Query<Hbar, AccountBalanceQuery> {
         'Call setAccountId() first.',
       );
     }
-
-    // final query = CryptoGetAccountBalanceQuery(
-    //   header: QueryHeader(),
-    //   accountID: AccountID(
-    //     shardNum: Int64(_accountId!.shardNum),
-    //     realmNum: Int64(_accountId!.realmNum),
-    //     accountNum: Int64(_accountId!.accountNum),
-    //   ),
-    // );
 
     final query = CryptoGetAccountBalanceQuery(
       header: QueryHeader(),

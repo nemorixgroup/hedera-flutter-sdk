@@ -20,11 +20,13 @@ library;
 export 'src/client/hedera_client.dart';
 export 'src/client/hedera_network.dart';
 export 'src/client/hedera_node.dart';
+export 'src/client/mirror_node_client.dart';
 
 // Core
 export 'src/core/hedera_constants.dart';
 export 'src/core/hedera_status_code.dart';
 export 'src/core/hedera_status_exception.dart';
+export 'src/core/mirror_node_exception.dart';
 
 // Crypto
 export 'src/crypto/hedera_key.dart';
@@ -46,6 +48,16 @@ export 'src/proto/basic_types.pbenum.dart' show TokenSupplyType, TokenType;
 export 'src/queries/account_balance_query.dart';
 export 'src/queries/account_info.dart';
 export 'src/queries/account_info_query.dart';
+export 'src/queries/mirror/mirror_node_account_balance.dart';
+export 'src/queries/mirror/mirror_node_account_balance_query.dart';
+export 'src/queries/mirror/mirror_node_custom_fees.dart';
+export 'src/queries/mirror/mirror_node_key.dart';
+export 'src/queries/mirror/mirror_node_nft_info.dart';
+export 'src/queries/mirror/mirror_node_token_balance.dart';
+export 'src/queries/mirror/mirror_node_token_balance_query.dart';
+export 'src/queries/mirror/mirror_node_token_info.dart';
+export 'src/queries/mirror/mirror_node_token_info_query.dart';
+export 'src/queries/mirror/mirror_node_token_nft_info_query.dart';
 export 'src/queries/query.dart';
 export 'src/queries/transaction_receipt_query.dart';
 export 'src/queries/transaction_record_query.dart';
