@@ -2,75 +2,71 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 
 // ---- Phase 2: Queries ----
 
-/// Demonstrates all Phase 2 queries: AccountBalanceQuery and
-/// AccountInfoQuery.
+/// Demonstrates the account queries.
 ///
-/// Note: execute() via gRPC is pending implementation.
-/// This example shows the complete flow up to network submission.
+/// - Balances: AccountBalanceQuery was removed from consensus nodes
+///   (release v0.77), so the balance is read from the Mirror Node with
+///   MirrorNodeAccountBalanceQuery. This part runs for real; it is
+///   free and needs no operator account.
+/// - AccountInfoQuery: built and serialized here. Executing it against
+///   a consensus node is not implemented yet.
+///
+/// For token queries, see example/phase3/token_queries_example.dart.
 Future<void> queryExamples() async {
   print('=== Queries (Phase 2) ===\n');
 
-  // ---- AccountBalanceQuery ----
+  final client = HederaClient.forTestnet();
 
-  print('--- AccountBalanceQuery ---\n');
+  // ---- MirrorNodeAccountBalanceQuery ----
 
-  // 1. Build AccountBalanceQuery
-  print('Step 1: Build AccountBalanceQuery');
-  final balanceQuery =
-      AccountBalanceQuery().setAccountId(AccountId.fromString('0.0.2'));
+  print('--- MirrorNodeAccountBalanceQuery ---\n');
 
-  print('Account ID: ${balanceQuery.accountId}');
+  // 1. Connect to testnet
+  print('Step 1: Connect to Hedera testnet');
+  print('Network:     ${client.network.name}');
+  print('Mirror Node: ${client.mirrorNodeBaseUrl}');
   print('');
 
-  // 2. Serialize to Protobuf bytes
-  print('Step 2: Serialize to Protobuf bytes');
-  final balanceBytes = balanceQuery.toBytes();
-  print('Serialized bytes: ${balanceBytes.length} bytes');
-  print('Ready for network submission: true');
-  print('');
-
-  // 3. Execute (pending gRPC)
-  print('Step 3: Execute (pending gRPC)');
-  print('When ready: final balance = await balanceQuery.execute(client);');
-  print('Result:     balance.toHbars() -> 10.0');
+  // 2. Read the HBAR balance from the Mirror Node
+  print('Step 2: Read the HBAR balance of account 0.0.2');
+  try {
+    final balance = await MirrorNodeAccountBalanceQuery()
+        .setAccountId(AccountId.fromString('0.0.2'))
+        .execute(client);
+    print('Balance:     ${balance.hbars}');
+    print('Timestamp:   ${balance.timestamp}');
+  } on MirrorNodeException catch (e) {
+    print('Mirror Node request failed: $e');
+  } on HederaStatusException catch (e) {
+    print('Mirror Node does not know the account: ${e.statusCode.name}');
+  }
   print('');
 
   // ---- AccountInfoQuery ----
 
   print('--- AccountInfoQuery ---\n');
 
-  // 4. Build AccountInfoQuery
-  print('Step 4: Build AccountInfoQuery');
+  // 3. Build AccountInfoQuery
+  print('Step 3: Build AccountInfoQuery');
   final infoQuery =
       AccountInfoQuery().setAccountId(AccountId.fromString('0.0.12345'));
 
   print('Account ID: ${infoQuery.accountId}');
   print('');
 
-  // 5. Serialize to Protobuf bytes
-  print('Step 5: Serialize to Protobuf bytes');
+  // 4. Serialize to Protobuf bytes
+  print('Step 4: Serialize to Protobuf bytes');
   final infoBytes = infoQuery.toBytes();
   print('Serialized bytes: ${infoBytes.length} bytes');
-  print('Ready for network submission: true');
   print('');
 
-  // 6. Connect to testnet
-  print('Step 6: Connect to Hedera testnet');
-  final client = HederaClient.forTestnet();
-  print('Network: ${client.network.name}');
-  print('Endpoint: ${client.networkEndpoint}');
+  // 5. Execute (pending)
+  print('Step 5: Execute against a consensus node (pending)');
+  print('Consensus-node query execution is not implemented yet.');
   print('');
 
-  // 7. Execute (pending gRPC)
-  print('Step 7: Execute (pending gRPC)');
-  print('When ready: final info = await infoQuery.execute(client);');
-  print('Result:     info.balance.toHbars() -> 10.0');
-  print('            info.memo -> NemorixPay wallet');
-  print('            info.deleted -> false');
-  print('');
-
-  // 8. Show full intended workflow
-  print('Step 8: Full workflow (once gRPC is implemented)');
+  // 6. Show the full intended workflow
+  print('Step 6: Typical workflow');
   print('');
   print('  // Create wallet');
   print('  final mnemonic = await Mnemonic.generate24(');
@@ -88,18 +84,12 @@ Future<void> queryExamples() async {
   print('  final receipt = await response.getReceipt(client);');
   print('  final accountId = receipt.accountId; // 0.0.XXXXXX');
   print('');
-  print('  // Query the balance');
-  print('  final balance = await AccountBalanceQuery()');
+  print('  // Query the balance (Mirror Node can take a few seconds');
+  print('  // to show a brand new account)');
+  print('  final balance = await MirrorNodeAccountBalanceQuery()');
   print('      .setAccountId(AccountId.fromString(accountId!))');
   print('      .execute(client);');
-  print('  print(balance.toHbars()); // 10.0');
-  print('');
-  print('  // Query full account info');
-  print('  final info = await AccountInfoQuery()');
-  print('      .setAccountId(AccountId.fromString(accountId!))');
-  print('      .execute(client);');
-  print('  print(info.memo);    // NemorixPay wallet');
-  print('  print(info.deleted); // false');
+  print('  print(balance.hbars.toHbars()); // 10.0');
   print('');
   print('  // Transfer HBAR');
   print('  await CryptoTransferTransaction()');
@@ -113,6 +103,8 @@ Future<void> queryExamples() async {
   print('      )');
   print('      .execute(client);');
   print('');
+
+  await client.close();
 
   print('=== Query examples complete ===\n');
 }

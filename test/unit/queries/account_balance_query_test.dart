@@ -1,3 +1,6 @@
+// AccountBalanceQuery is deprecated on purpose; these tests keep
+// verifying that its toBytes() serialization still works.
+// ignore_for_file: deprecated_member_use_from_same_package
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';

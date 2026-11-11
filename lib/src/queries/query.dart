@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:hedera_flutter_sdk/src/client/hedera_client.dart';
 import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 
-/// Base class for all Hedera queries.
+/// Base class for the consensus-node queries.
 ///
 /// Unlike Transaction, a Query only reads data from the network
 /// and does not modify state.
@@ -13,23 +13,36 @@ import 'package:hedera_flutter_sdk/src/models/account_id.dart';
 /// - [T]: the concrete subclass; enables fluent setters to return
 ///   the subclass type (Generic Self-Type pattern)
 ///
+/// ## Status
+///
+/// Executing queries against consensus nodes is not implemented yet:
+/// [execute] throws [UnimplementedError]. Subclasses can already build
+/// and serialize their request with [toBytes].
+///
+/// To read data from the network today, use the Mirror Node queries,
+/// which are free and need no operator account:
+/// - `MirrorNodeAccountBalanceQuery`
+/// - `MirrorNodeTokenBalanceQuery`
+/// - `MirrorNodeTokenInfoQuery`
+/// - `MirrorNodeTokenNftInfoQuery`
+///
 /// Example:
 /// ```dart
-/// final balance = await AccountBalanceQuery()
+/// final balance = await MirrorNodeAccountBalanceQuery()
 ///     .setAccountId(AccountId.fromString('0.0.12345'))
 ///     .execute(client);
 ///
-/// print(balance.toHbars()); // 10.0
+/// print(balance.hbars.toHbars()); // 10.0
 /// ```
 ///
-/// ## Payment (pending implementation, June 2026)
+/// ## Payment (pending implementation)
 ///
-/// Most Hedera queries require a small payment to the node, attached
-/// as a signed CryptoTransferTransaction in the query header.
-/// This is not yet implemented; toBytes currently sends an empty
+/// Most consensus-node queries require a small payment to the node,
+/// attached as a signed CryptoTransferTransaction in the query header.
+/// This is not implemented yet; toBytes currently sends an empty
 /// QueryHeader (no payment attached).
 ///
-/// Planned approach once CryptoTransferTransaction is available:
+/// Planned approach once query execution is implemented:
 /// 1. Add a `setPayment(Transaction payment)` or
 ///    `generatePayment(HederaClient client)` method that builds a
 ///    small CryptoTransferTransaction from the operator to the
@@ -66,12 +79,10 @@ abstract class Query<R, T extends Query<R, T>> {
 
   // ---- Execution ----
 
-  /// Executes this query against the Hedera network.
+  /// Executes this query against a consensus node.
   ///
-  /// Example:
-  /// ```dart
-  /// final result = await query.execute(client);
-  /// ```
+  /// Not implemented yet; always throws [UnimplementedError]. See the
+  /// class documentation for the Mirror Node alternatives.
   // TODO(Phase2): Implement gRPC execution via HederaClient
   Future<R> execute(HederaClient client) async {
     throw UnimplementedError('Query.execute; Phase 2');
