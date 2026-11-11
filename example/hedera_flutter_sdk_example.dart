@@ -11,6 +11,7 @@ import 'phase3/token_create_example.dart';
 import 'phase3/token_kyc_freeze_example.dart';
 import 'phase3/token_mint_burn_example.dart';
 import 'phase3/token_nft_example.dart';
+import 'phase3/token_queries_example.dart';
 import 'phase3/token_transfer_example.dart';
 
 /// hedera_flutter_sdk - Examples Entry Point
@@ -99,7 +100,8 @@ import 'phase3/token_transfer_example.dart';
 ///   - getReceipt() with consensus polling
 ///   - signWith() for non-operator signing
 ///   - setPayerAccountId() for custom fee payers
-///   - AccountBalanceQuery, AccountInfoQuery
+///   - AccountInfoQuery (build and serialize; consensus query
+///     execution is not implemented yet)
 ///   - Multi-node load balancing: dynamic node list from the Mirror
 ///     Node REST API, round-robin selection, retry/failover
 ///
@@ -115,6 +117,10 @@ import 'phase3/token_transfer_example.dart';
 ///   - KYC and freeze: TokenGrantKycTransaction,
 ///     TokenRevokeKycTransaction, TokenFreezeTransaction,
 ///     TokenUnfreezeTransaction
+///   - Mirror Node queries (v0.2.6-dev): MirrorNodeAccountBalanceQuery,
+///     MirrorNodeTokenBalanceQuery, MirrorNodeTokenInfoQuery,
+///     MirrorNodeTokenNftInfoQuery. AccountBalanceQuery is deprecated
+///     because consensus nodes no longer answer it.
 ///
 /// Phase 4 (planned): Hedera Consensus Service (HCS)
 ///   - TopicCreateTransaction, TopicSubmitMessageTransaction
@@ -137,7 +143,8 @@ Future<void> main() async {
   // Includes getReceipt(), signWith(), and setPayerAccountId().
   await transactionExamples();
 
-  // AccountBalanceQuery, AccountInfoQuery.
+  // MirrorNodeAccountBalanceQuery (live, read-only) and
+  // AccountInfoQuery (build and serialize only).
   await queryExamples();
 
   // Multi-node load balancing: verifies the dynamic node list from
@@ -213,4 +220,12 @@ Future<void> main() async {
   // after KYC is granted and after unfreezing (v0.2.5-dev).
   // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
   await tokenKycFreezeExample();
+
+  // Mirror Node token queries: creates a fungible token and an NFT
+  // collection, moves some of them to Alice and reads the result back
+  // with MirrorNodeAccountBalanceQuery, MirrorNodeTokenBalanceQuery,
+  // MirrorNodeTokenInfoQuery and MirrorNodeTokenNftInfoQuery
+  // (v0.2.6-dev).
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await tokenQueriesExample();
 }

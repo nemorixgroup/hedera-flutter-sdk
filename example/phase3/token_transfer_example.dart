@@ -22,9 +22,9 @@ import 'package:hedera_flutter_sdk/hedera_flutter_sdk.dart';
 /// 7. Print final summary
 ///
 /// NOTE: final balances below are tracked locally as running totals
-/// from each transfer, not queried from the network. AccountBalanceQuery
-/// currently only exposes HBAR balance, not per-token balances; that
-/// is planned for a future version (token queries, v0.2.6-dev).
+/// from each transfer, not queried from the network. To read token
+/// balances back from the Mirror Node, see
+/// example/phase3/token_queries_example.dart.
 ///
 /// See: https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/transfer-tokens
 ///
