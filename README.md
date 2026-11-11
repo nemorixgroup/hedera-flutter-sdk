@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.2.5-dev
+  hedera_flutter_sdk: ^0.2.6-dev
 ```
 
 ## Quick Guide
@@ -351,7 +351,54 @@ A transfer that the network rejects because of KYC or freeze throws a
 `HederaStatusException` whose status is
 `ACCOUNT_KYC_NOT_GRANTED_FOR_TOKEN` or `ACCOUNT_FROZEN_FOR_TOKEN`.
 
-## Current Features (v0.2.5-dev)
+#### Read balances and tokens from the Mirror Node
+
+Reads use the Mirror Node REST API: they are free and need no operator
+account. They replace the consensus `AccountBalanceQuery`, which Hedera
+removed in release v0.77 (`AccountBalanceQuery` is deprecated in this
+SDK).
+
+```dart
+final client = HederaClient.forTestnet();
+
+// HBAR balance
+final balance = await MirrorNodeAccountBalanceQuery()
+    .setAccountId(AccountId.fromString('0.0.12345'))
+    .execute(client);
+print(balance.hbars); // 10.0 ℏ
+
+// Token balances of an account (all tokens, or one with setTokenId)
+final balances = await MirrorNodeTokenBalanceQuery()
+    .setAccountId(AccountId.fromString('0.0.12345'))
+    .execute(client);
+for (final b in balances) {
+  print('${b.tokenId}: ${b.balance}');
+  print('KYC: ${b.kycStatus.apiValue}'); // GRANTED, REVOKED, NOT_APPLICABLE
+  print('Freeze: ${b.freezeStatus.apiValue}'); // FROZEN, UNFROZEN, ...
+}
+// An empty list means the account is not associated with the token.
+
+// Token information
+final info = await MirrorNodeTokenInfoQuery()
+    .setTokenId(tokenId)
+    .execute(client);
+print('${info.name} (${info.symbol}), supply ${info.totalSupply}');
+
+// One NFT: owner, metadata and spender
+final nft = await MirrorNodeTokenNftInfoQuery()
+    .setNftId(NftId(collectionId, 1))
+    .execute(client);
+print('Owner: ${nft.accountId}');
+```
+
+An unknown account, token or NFT throws a `HederaStatusException`
+(`INVALID_ACCOUNT_ID`, `INVALID_TOKEN_ID` or `INVALID_NFT_ID`). Any
+other HTTP failure throws a `MirrorNodeException`. The Mirror Node
+reflects changes a few seconds after consensus, so a read right after a
+transaction may need a short retry (see
+`example/phase3/token_queries_example.dart`).
+
+## Current Features (v0.2.6-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -370,12 +417,16 @@ A transfer that the network rejects because of KYC or freeze throws a
 - 335 Dart classes generated from Hedera HAPI Protobuf definitions
 - `Transaction<T>`: generic base class with fluent API, signing,
   and Protobuf serialization (Generic Self-Type pattern)
-- `Query<R,T>`: generic base class with fluent API and Protobuf serialization
+- `Query<R,T>`: generic base class for consensus queries, with fluent API
+  and Protobuf serialization (executing consensus queries is not
+  implemented yet)
 - Account management transactions: `AccountCreateTransaction`,
   `AccountUpdateTransaction`, `AccountDeleteTransaction`
 - `CryptoTransferTransaction`: HBAR transfers with sum-zero validation
-- Account queries: `AccountBalanceQuery`, `AccountInfoQuery` with
-  `AccountInfo` model
+- `AccountInfoQuery` with `AccountInfo` model (build and serialize;
+  consensus execution planned). `AccountBalanceQuery` is deprecated
+  because Hedera removed it from consensus nodes; use the Mirror Node
+  queries below
 - EVM address alias support
 - gRPC execution pipeline: `buildBody()`, `buildSignedTransaction()`,
   `execute()` via `HederaClient` with precheck code verification
@@ -427,12 +478,24 @@ A transfer that the network rejects because of KYC or freeze throws a
   revoke KYC for an account on a token (requires the token's KYC key)
 - `TokenFreezeTransaction`/`TokenUnfreezeTransaction`: freeze or
   unfreeze an account on a token (requires the token's freeze key)
+- `MirrorNodeClient` (`HederaClient.mirrorNode`): REST client for the
+  Mirror Node with pagination and retry of transient failures (HTTP 5xx,
+  429, timeouts, network errors), and `MirrorNodeException` for HTTP
+  failures
+- Mirror Node queries (free, no operator needed):
+  `MirrorNodeAccountBalanceQuery` (HBAR balance),
+  `MirrorNodeTokenBalanceQuery` (token balances with KYC and freeze
+  status), `MirrorNodeTokenInfoQuery` (full token information, keys and
+  custom fees) and `MirrorNodeTokenNftInfoQuery` (owner, metadata and
+  spender of an NFT)
 
 ## Planned Features
 
-- Hedera Token Service (HTS): token queries, custom fees, and the
-  remaining token operations
-- Mirror Node REST client with real-time WebSocket subscriptions
+- Hedera Token Service (HTS): custom fees and the remaining token
+  operations (wipe, pause, update, delete)
+- Consensus query execution over gRPC with the signed query payment
+  (`AccountInfoQuery`, `TokenInfoQuery`, `TokenNftInfoQuery`)
+- Real-time WebSocket subscriptions on the Mirror Node client
 - Hedera Consensus Service (HCS)
 
 ## Real-World Use Case
