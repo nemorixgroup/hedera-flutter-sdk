@@ -5,6 +5,118 @@ All notable changes to hedera_flutter_sdk will be documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.7-dev
+
+Phase 3 continues: custom fees for tokens.
+
+### Added
+
+- `CustomFee`: sealed base class for the custom fees a token charges on
+  every transfer (`lib/src/models/custom_fee.dart`), with three kinds
+  - `CustomFixedFee`: a fixed amount of HBAR (`setHbarAmount()`) or of a
+    fungible token (`setAmount()` with `setDenominatingTokenId()`),
+    paid by the sender
+  - `CustomFractionalFee`: a fraction of the amount transferred
+    (`setNumerator()`, `setDenominator()`), with optional `setMin()` and
+    `setMax()`; fungible tokens only. `setAssessmentMethod()` takes a
+    `FeeAssessmentMethod`: `receiverPays` (default) or `senderPays`
+  - `CustomRoyaltyFee`: a fraction of the fungible value a receiver
+    exchanges for an NFT, with an optional `setFallbackFee()` for
+    transfers with no fungible value; non-fungible tokens only
+  - Every kind has `setFeeCollectorAccountId()` (required) and
+    `setAllCollectorsAreExempt()` (HIP-573)
+  - Local validation with `ArgumentError`: collector, amount, numerator
+    and denominator are required; the denominator cannot be zero; no
+    value can be negative
+- `FeeAssessmentMethod` enum (`receiverPays`, `senderPays`)
+- `TokenCreateTransaction.setCustomFees()`, `addCustomFee()` and the
+  `customFees` getter (unmodifiable list)
+- `TokenFeeScheduleUpdateTransaction`: replaces the custom fee schedule
+  of a token
+  - `setTokenId()` (required), `setCustomFees()`, `addCustomFee()`
+  - The new list replaces the old one; an empty list clears the
+    schedule
+  - Requires the token's fee schedule key and the fee payer to sign
+- `HederaStatusCode` constants: `fractionDividesByZero`,
+  `customFeesListTooLong`, `invalidCustomFeeCollector`,
+  `customFeeMustBePositive`, `tokenHasNoFeeScheduleKey`,
+  `customScheduleAlreadyHasNoFees`,
+  `customFractionalFeeOnlyAllowedForFungibleCommon` and
+  `customRoyaltyFeeOnlyAllowedForNonFungibleUnique`
+- `example/phase3/token_custom_fees_example.dart`: end-to-end example
+  that creates a token with a fractional fee and a fixed HBAR fee,
+  shows who receives what when one account sends tokens to another,
+  reads the fee schedule back from the Mirror Node, then replaces and
+  clears it, including the expected rejections
+- 120 new unit tests (950 to 1070 total)
+
+### Changed
+
+- `TokenCreateTransaction` documentation now states that the key of
+  every fee collector must sign, and that a token with custom fees costs
+  more to create
+- `README.md` and the example entry point updated for custom fees
+
+### Notes
+
+- Verified live: creating a token with custom fees needs the signature
+  of the fee collector account. Without it the network answers
+  `INVALID_SIGNATURE`. Updating the schedule later does not need it,
+  only the fee schedule key and the fee payer.
+- Verified live: a fee collector whose fee is charged in the token
+  being created is associated with it by the network at creation. A
+  collector of a fee charged in another token must already be
+  associated with that token.
+- Creating a token with custom fees costs about twice as much as
+  creating one without them (USD 2.00 against USD 1.00 in the official
+  fee table). The example sets a maximum transaction fee of 60 HBAR;
+  with 30 HBAR the network answered `INSUFFICIENT_TX_FEE`.
+- The treasury account of a token is exempt from its custom fees, so
+  fees only apply to transfers between other accounts.
+- Not validated locally, left to the network: the limit of 10 fees,
+  fractional fees on a non-fungible token, royalty fees on a fungible
+  token, a maximum below the minimum, and zero amounts.
+- In the generated protobuf `all_collectors_are_exempt` is field 5,
+  while the text of the HIP-18 proposal numbers a different field 4;
+  the SDK follows the generated code.
+- Result models for reading fees from the Mirror Node keep their
+  `MirrorNode...` names (`MirrorNodeFixedFee` and so on), so the names
+  of the fees you set and the fees you read do not collide.
+- Not part of this version: custom fees in `TransactionRecord`
+  (assessed custom fees), and live verification of royalty fees,
+  fees charged in another token, `senderPays` and exempt collectors.
+- Token transaction classes remain flat in `lib/src/transactions/tokens/`.
+  Regrouping them is planned as its own version, v0.2.8-dev.
+
+## Official References
+
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/custom-token-fees
+- https://docs.hedera.com/hedera/sdks-and-apis/sdks/token-service/update-a-fee-schedule
+- https://hips.hedera.com/hip/hip-18
+- https://hips.hedera.com/hip/hip-573
+
+### Verified
+
+Live on Hedera testnet: created a treasury, a fee collector and two
+accounts, and a token with a fee schedule key, a 1% fractional fee
+(minimum 1, maximum 100 units, receiver pays) and a fixed fee of 1 HBAR.
+A transfer from the treasury charged nothing. A transfer of 10.00 tokens
+from one account to the other delivered 9.90 to the receiver, paid 0.10
+tokens and 1 HBAR to the collector and left 10.00 with the sender. The
+Mirror Node returned the fee schedule as set. Replacing the schedule with
+a fixed fee of 2 HBAR dropped the fractional fee; an update signed
+without the fee schedule key answered `INVALID_SIGNATURE`; clearing the
+schedule succeeded and clearing it again answered
+`CUSTOM_SCHEDULE_ALREADY_HAS_NO_FEES`. The Mirror Node reflected each
+change about 2 seconds after consensus.
+
+### Status
+
+Phase 3 in progress: custom fees implemented and verified live on
+testnet.   
+Not ready for production use.   
+Next: token classes reorganization (v0.2.8-dev).  
+
 ## 0.2.6-dev
 
 Phase 3 continues: token queries, read from the Mirror Node REST API.

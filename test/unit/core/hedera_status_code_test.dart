@@ -140,6 +140,45 @@ void main() {
       });
     });
 
+    // ---- custom fee status codes ----
+
+    group('custom fee status codes', () {
+      const customFeeCodes = <int, HederaStatusCode>{
+        230: HederaStatusCode.fractionDividesByZero,
+        232: HederaStatusCode.customFeesListTooLong,
+        233: HederaStatusCode.invalidCustomFeeCollector,
+        239: HederaStatusCode.customFeeMustBePositive,
+        240: HederaStatusCode.tokenHasNoFeeScheduleKey,
+        244: HederaStatusCode.customScheduleAlreadyHasNoFees,
+        246: HederaStatusCode.customFractionalFeeOnlyAllowedForFungibleCommon,
+        261: HederaStatusCode.customRoyaltyFeeOnlyAllowedForNonFungibleUnique,
+      };
+
+      for (final entry in customFeeCodes.entries) {
+        test('fromCode(${entry.key}) returns ${entry.value.name}', () {
+          expect(HederaStatusCode.fromCode(entry.key), same(entry.value));
+          expect(entry.value.code, equals(entry.key));
+        });
+      }
+
+      test('tokenHasNoFeeScheduleKey has code 240', () {
+        expect(HederaStatusCode.tokenHasNoFeeScheduleKey.code, equals(240));
+      });
+
+      test('customScheduleAlreadyHasNoFees has code 244', () {
+        expect(
+          HederaStatusCode.customScheduleAlreadyHasNoFees.code,
+          equals(244),
+        );
+      });
+
+      test('a custom fee code without a constant resolves by name', () {
+        final status = HederaStatusCode.fromCode(238);
+        expect(status.name, equals('CUSTOM_FEE_NOT_FULLY_SPECIFIED'));
+        expect(status.code, equals(238));
+      });
+    });
+
     // Guards against hand-typed numbers drifting from the official
     // protobuf definitions: every named constant must match the
     // generated ResponseCodeEnum by both code and name.
@@ -163,6 +202,14 @@ void main() {
         HederaStatusCode.tokenIsPaused,
         HederaStatusCode.transactionExpired,
         HederaStatusCode.invalidTokenId,
+        HederaStatusCode.fractionDividesByZero,
+        HederaStatusCode.customFeesListTooLong,
+        HederaStatusCode.invalidCustomFeeCollector,
+        HederaStatusCode.customFeeMustBePositive,
+        HederaStatusCode.tokenHasNoFeeScheduleKey,
+        HederaStatusCode.customScheduleAlreadyHasNoFees,
+        HederaStatusCode.customFractionalFeeOnlyAllowedForFungibleCommon,
+        HederaStatusCode.customRoyaltyFeeOnlyAllowedForNonFungibleUnique,
       ];
 
       for (final status in constants) {

@@ -23,6 +23,12 @@ import 'package:hedera_flutter_sdk/src/proto/transaction_response.pb.dart'
 /// cannot be added later; if a key is set here, it cannot be removed
 /// later.
 ///
+/// Custom fees ([setCustomFees], [addCustomFee]) are charged on every
+/// transfer of the token. Without a fee schedule key they can never be
+/// changed after creation. When the token has custom fees, the key of
+/// every fee collector account MUST also sign this transaction, and the
+/// transaction costs more than a token without fees.
+///
 /// Example:
 /// ```dart
 /// final response = await TokenCreateTransaction()
@@ -63,6 +69,7 @@ class TokenCreateTransaction extends Transaction<TokenCreateTransaction> {
   TokenSupplyType? _supplyType;
   int? _maxSupply;
   List<int>? _metadata;
+  final List<CustomFee> _customFees = [];
 
   // ---- Setters (fluent API) ----
 
@@ -365,6 +372,58 @@ class TokenCreateTransaction extends Transaction<TokenCreateTransaction> {
     return this;
   }
 
+  /// Replaces the custom fees of the token with [customFees].
+  ///
+  /// A token can have up to 10 custom fees; the network rejects longer
+  /// lists. Fractional fees apply only to fungible tokens and royalty
+  /// fees only to non-fungible tokens. To change the fees after
+  /// creation the token needs a fee schedule key (see
+  /// [setFeeScheduleKey]).
+  ///
+  /// The key of every fee collector account MUST sign this transaction
+  /// (without it the network answers `INVALID_SIGNATURE`). A collector
+  /// of a fee charged in the token being created is associated with it
+  /// automatically by the network. A collector of a fee charged in
+  /// another token must already be associated with that token.
+  ///
+  /// Creating a token with custom fees costs more than creating one
+  /// without them, so raise the maximum transaction fee if the network
+  /// answers `INSUFFICIENT_TX_FEE` (see `setMaxTransactionFee`).
+  ///
+  /// Example:
+  /// ```dart
+  /// transaction.setCustomFees([
+  ///   CustomFixedFee()
+  ///       .setFeeCollectorAccountId(collectorId)
+  ///       .setHbarAmount(Hbar(1)),
+  ///   CustomFractionalFee()
+  ///       .setFeeCollectorAccountId(collectorId)
+  ///       .setNumerator(1)
+  ///       .setDenominator(100),
+  /// ]);
+  /// ```
+  TokenCreateTransaction setCustomFees(List<CustomFee> customFees) {
+    _customFees
+      ..clear()
+      ..addAll(customFees);
+    return this;
+  }
+
+  /// Adds one custom fee to the token, keeping the ones already added.
+  ///
+  /// Example:
+  /// ```dart
+  /// transaction.addCustomFee(
+  ///   CustomFixedFee()
+  ///       .setFeeCollectorAccountId(collectorId)
+  ///       .setHbarAmount(Hbar(1)),
+  /// );
+  /// ```
+  TokenCreateTransaction addCustomFee(CustomFee customFee) {
+    _customFees.add(customFee);
+    return this;
+  }
+
   // ---- Getters ----
 
   /// The name of the token, or null if not set.
@@ -435,6 +494,10 @@ class TokenCreateTransaction extends Transaction<TokenCreateTransaction> {
   /// The token metadata, or null if not set.
   List<int>? get metadata => _metadata;
 
+  /// The custom fees of the token, as an unmodifiable list. Empty if
+  /// none were set.
+  List<CustomFee> get customFees => List.unmodifiable(_customFees);
+
   // ---- Serialization ----
 
   @override
@@ -448,7 +511,9 @@ class TokenCreateTransaction extends Transaction<TokenCreateTransaction> {
   /// Applies the TokenCreateTransaction-specific body fields to [body].
   ///
   /// Throws [ArgumentError] if [tokenName], [tokenSymbol], or
-  /// [treasuryAccountId] have not been set.
+  /// [treasuryAccountId] have not been set, if an NFT collection has
+  /// non-zero decimals or initial supply, or if a custom fee is not
+  /// fully specified.
   @override
   void applyToBody(hedera_tx.TransactionBody body) {
     body.tokenCreation = _buildTokenCreateBody();
@@ -533,6 +598,9 @@ class TokenCreateTransaction extends Transaction<TokenCreateTransaction> {
     if (_supplyType != null) tokenBody.supplyType = _supplyType!;
     if (_maxSupply != null) tokenBody.maxSupply = Int64(_maxSupply!);
     if (_metadata != null) tokenBody.metadata = _metadata!;
+
+    // Custom fees are validated locally; the network checks the rest.
+    tokenBody.customFees.addAll(_customFees.map((fee) => fee.toProto()));
 
     return tokenBody;
   }

@@ -37,6 +37,7 @@ export 'src/crypto/public_key.dart';
 
 // Models
 export 'src/models/account_id.dart';
+export 'src/models/custom_fee.dart';
 export 'src/models/hbar.dart';
 export 'src/models/nft_id.dart';
 export 'src/models/token_id.dart';
@@ -71,6 +72,7 @@ export 'src/transactions/tokens/token_associate_transaction.dart';
 export 'src/transactions/tokens/token_burn_transaction.dart';
 export 'src/transactions/tokens/token_create_transaction.dart';
 export 'src/transactions/tokens/token_dissociate_transaction.dart';
+export 'src/transactions/tokens/token_fee_schedule_update_transaction.dart';
 export 'src/transactions/tokens/token_freeze_transaction.dart';
 export 'src/transactions/tokens/token_grant_kyc_transaction.dart';
 export 'src/transactions/tokens/token_mint_transaction.dart';

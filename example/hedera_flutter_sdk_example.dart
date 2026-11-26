@@ -8,6 +8,7 @@ import 'phase2/transaction_example.dart';
 import 'phase2/wallet_example.dart';
 import 'phase3/token_associate_example.dart';
 import 'phase3/token_create_example.dart';
+import 'phase3/token_custom_fees_example.dart';
 import 'phase3/token_kyc_freeze_example.dart';
 import 'phase3/token_mint_burn_example.dart';
 import 'phase3/token_nft_example.dart';
@@ -121,6 +122,9 @@ import 'phase3/token_transfer_example.dart';
 ///     MirrorNodeTokenBalanceQuery, MirrorNodeTokenInfoQuery,
 ///     MirrorNodeTokenNftInfoQuery. AccountBalanceQuery is deprecated
 ///     because consensus nodes no longer answer it.
+///   - Custom fees (v0.2.7-dev): CustomFixedFee, CustomFractionalFee,
+///     CustomRoyaltyFee, TokenCreateTransaction.setCustomFees() and
+///     TokenFeeScheduleUpdateTransaction.
 ///
 /// Phase 4 (planned): Hedera Consensus Service (HCS)
 ///   - TopicCreateTransaction, TopicSubmitMessageTransaction
@@ -228,4 +232,11 @@ Future<void> main() async {
   // (v0.2.6-dev).
   // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
   await tokenQueriesExample();
+
+  // Custom fees: creates a token with a fractional fee and a fixed
+  // HBAR fee, shows who receives what when Alice sends tokens to Bob,
+  // then replaces and clears the fee schedule with
+  // TokenFeeScheduleUpdateTransaction (v0.2.7-dev).
+  // This requires HEDERA_OPERATOR_ID and HEDERA_OPERATOR_KEY env vars.
+  await tokenCustomFeesExample();
 }
