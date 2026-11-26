@@ -114,6 +114,46 @@ class HederaStatusCode {
   /// The token ID is invalid or does not exist.
   static const invalidTokenId = HederaStatusCode._(167, 'INVALID_TOKEN_ID');
 
+  // - Custom fee status codes --------------------------------
+
+  /// A custom fee fraction has a denominator of zero.
+  static const fractionDividesByZero =
+      HederaStatusCode._(230, 'FRACTION_DIVIDES_BY_ZERO');
+
+  /// The token has more custom fees than the network allows (10).
+  static const customFeesListTooLong =
+      HederaStatusCode._(232, 'CUSTOM_FEES_LIST_TOO_LONG');
+
+  /// A custom fee collector account is invalid.
+  static const invalidCustomFeeCollector =
+      HederaStatusCode._(233, 'INVALID_CUSTOM_FEE_COLLECTOR');
+
+  /// A custom fee amount must be positive.
+  static const customFeeMustBePositive =
+      HederaStatusCode._(239, 'CUSTOM_FEE_MUST_BE_POSITIVE');
+
+  /// The token has no fee schedule key, so its fees cannot be changed.
+  static const tokenHasNoFeeScheduleKey =
+      HederaStatusCode._(240, 'TOKEN_HAS_NO_FEE_SCHEDULE_KEY');
+
+  /// The token already has no custom fees.
+  static const customScheduleAlreadyHasNoFees =
+      HederaStatusCode._(244, 'CUSTOM_SCHEDULE_ALREADY_HAS_NO_FEES');
+
+  /// A fractional fee was set on a token that is not fungible common.
+  static const customFractionalFeeOnlyAllowedForFungibleCommon =
+      HederaStatusCode._(
+    246,
+    'CUSTOM_FRACTIONAL_FEE_ONLY_ALLOWED_FOR_FUNGIBLE_COMMON',
+  );
+
+  /// A royalty fee was set on a token that is not non-fungible unique.
+  static const customRoyaltyFeeOnlyAllowedForNonFungibleUnique =
+      HederaStatusCode._(
+    261,
+    'CUSTOM_ROYALTY_FEE_ONLY_ALLOWED_FOR_NON_FUNGIBLE_UNIQUE',
+  );
+
   /// Unknown status code not recognized by this SDK version.
   static const unknown = HederaStatusCode._(0, 'UNKNOWN_STATUS');
 
@@ -137,6 +177,14 @@ class HederaStatusCode {
     265: tokenIsPaused,
     4: transactionExpired,
     167: invalidTokenId,
+    230: fractionDividesByZero,
+    232: customFeesListTooLong,
+    233: invalidCustomFeeCollector,
+    239: customFeeMustBePositive,
+    240: tokenHasNoFeeScheduleKey,
+    244: customScheduleAlreadyHasNoFees,
+    246: customFractionalFeeOnlyAllowedForFungibleCommon,
+    261: customRoyaltyFeeOnlyAllowedForNonFungibleUnique,
   };
 
   @override
