@@ -42,7 +42,7 @@ no third-party references, no unverified code.
 ```yaml
 # pubspec.yaml
 dependencies:
-  hedera_flutter_sdk: ^0.2.6-dev
+  hedera_flutter_sdk: ^0.2.7-dev
 ```
 
 ## Quick Guide
@@ -398,7 +398,67 @@ reflects changes a few seconds after consensus, so a read right after a
 transaction may need a short retry (see
 `example/phase3/token_queries_example.dart`).
 
-## Current Features (v0.2.6-dev)
+#### Create a token with custom fees
+
+A token can charge a fee on every transfer: a fixed amount of HBAR or of
+a token, a fraction of the amount, or a royalty on NFT sales. Fees go to
+a fee collector account. Add a fee schedule key if you want to be able to
+change the fees later; without it they are immutable.
+
+```dart
+final createTx = TokenCreateTransaction()
+    .setTokenName('Demo Fee Coin')
+    .setTokenSymbol('DFEE')
+    .setDecimals(2)
+    .setInitialSupply(10000)
+    .setTreasuryAccountId(treasuryAccountId)
+    .setFeeScheduleKey(feeSchedulePublicKey)
+    .setCustomFees([
+      // 1% of every transfer, paid by the receiver (the default)
+      CustomFractionalFee()
+          .setFeeCollectorAccountId(collectorAccountId)
+          .setNumerator(1)
+          .setDenominator(100)
+          .setMin(1)
+          .setMax(100),
+      // 1 HBAR per transfer, paid by the sender
+      CustomFixedFee()
+          .setFeeCollectorAccountId(collectorAccountId)
+          .setHbarAmount(Hbar(1)),
+    ])
+    .setMaxTransactionFee(Hbar(60)); // custom fees make creation cost more
+
+// The treasury and every fee collector must sign
+await createTx.signWith(treasuryPrivateKey, client);
+await createTx.signWith(collectorPrivateKey, client);
+final response = await createTx.execute(client);
+```
+
+The treasury is exempt from the fees. For NFTs use `CustomRoyaltyFee`
+with an optional `setFallbackFee()`.
+
+#### Update or clear the fee schedule
+
+The new list replaces the old one. It must be signed by the fee schedule
+key; an empty list removes every fee.
+
+```dart
+final updateTx = TokenFeeScheduleUpdateTransaction()
+    .setTokenId(tokenId)
+    .setCustomFees([
+      CustomFixedFee()
+          .setFeeCollectorAccountId(collectorAccountId)
+          .setHbarAmount(Hbar(2)),
+    ]);
+
+await updateTx.signWith(feeSchedulePrivateKey, client);
+await updateTx.execute(client);
+```
+
+The result is visible with `MirrorNodeTokenInfoQuery` (`info.customFees`).
+See `example/phase3/token_custom_fees_example.dart`.
+
+## Current Features (v0.2.7-dev)
 
 - `HederaClient` with `forTestnet()`, `forMainnet()`, `forPreviewnet()`
 - `Mnemonic` with BIP-39 generation, validation, and recovery in English and
@@ -488,11 +548,17 @@ transaction may need a short retry (see
   status), `MirrorNodeTokenInfoQuery` (full token information, keys and
   custom fees) and `MirrorNodeTokenNftInfoQuery` (owner, metadata and
   spender of an NFT)
+- Custom fees: `CustomFixedFee`, `CustomFractionalFee` and
+  `CustomRoyaltyFee` (with `FeeAssessmentMethod` and exempt collectors),
+  set on `TokenCreateTransaction` with `setCustomFees()` or
+  `addCustomFee()`; the SDK validates them locally before sending
+- `TokenFeeScheduleUpdateTransaction`: replaces or clears the custom fee
+  schedule of a token (requires the token's fee schedule key)
 
 ## Planned Features
 
-- Hedera Token Service (HTS): custom fees and the remaining token
-  operations (wipe, pause, update, delete)
+- Hedera Token Service (HTS): the remaining token operations (wipe,
+  pause, update, delete)
 - Consensus query execution over gRPC with the signed query payment
   (`AccountInfoQuery`, `TokenInfoQuery`, `TokenNftInfoQuery`)
 - Real-time WebSocket subscriptions on the Mirror Node client
